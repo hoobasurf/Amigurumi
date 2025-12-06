@@ -1,0 +1,53 @@
+body {
+  margin: 0;
+  background: #ffeef8;
+  font-family: "Comic Sans MS", cursive;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.album-body {
+  padding-top: 20px;
+}
+
+.album-container {
+  display: flex;
+  gap: 20px;
+  padding: 20px;
+}
+
+.album-page {
+  width: 250px;
+  height: 350px;
+  background: #fffafc;
+  border: 4px solid #f7c6da;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  padding: 10px;
+  text-align: center;
+}
+
+.album-img {
+  width: 90%;
+  height: 250px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 3px solid #f7c6da;
+  background: #ffe9f3;
+}
+
+.album-controls button {
+  padding: 12px 20px;
+  font-size: 18px;
+  margin: 10px;
+  border-radius: 12px;
+  background: #ffb8d6;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+}
+
+.album-controls button:hover {
+  background: #ffa5ce;
+}

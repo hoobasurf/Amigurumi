@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gestion Amigurumi</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body class="owner-body">
+
+  <h1>Ajouter une création Amigurumi 🧸💖</h1>
+
+  <div class="form-container">
+    <label>Nom de la peluche :</label>
+    <input id="name" type="text" placeholder="ex : Princesse Lapinou" />
+
+    <label>Photo :</label>
+    <input id="photo" type="file" accept="image/*" />
+
+    <label>Rendre publique pour famille/amies :</label>
+    <select id="public">
+      <option value="true">Oui (visible dans l'album)</option>
+      <option value="false">Non (privé)</option>
+    </select>
+
+    <button id="save">Enregistrer</button>
+
+    <p id="status"></p>
+  </div>
+
+  <script type="module" src="app-owner.js"></script>
+</body>
+</html>

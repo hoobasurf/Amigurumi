@@ -1,3 +1,11 @@
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    import("./app-owner.js")
+        .then(m => alert("Import dynamique OK"))
+        .catch(err => alert("Erreur import : " + err));
+});
+</script>
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>

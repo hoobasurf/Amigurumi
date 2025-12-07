@@ -16,7 +16,7 @@
     <input id="name" type="text" placeholder="ex : Princesse Lapinou" />
 
     <label>Photos :</label>
-    <input id="photos" type="file" accept="image/*" multiple />
+    <input id="photo" type="file" accept="image/*" multiple />
 
     <label>Rendre publique pour famille/amies :</label>
     <select id="public">
@@ -25,14 +25,11 @@
     </select>
 
     <button id="save">Enregistrer</button>
-
     <p id="status">📤 Upload des images…</p>
   </div>
 
-  <div>
-    <h3>Mes projets existants :</h3>
-    <div id="existing-projects" style="display:flex;gap:10px;flex-wrap:wrap;"></div>
-  </div>
+  <h3>Mes projets existants :</h3>
+  <div id="projects-container" style="display:flex;gap:10px;flex-wrap:wrap;"></div>
 
   <script type="module" src="app-owner.js"></script>
 </body>

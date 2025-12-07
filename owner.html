@@ -32,6 +32,24 @@
 
   <!-- App Owner JS -->
   <script type="module" src="./app-owner.js"></script>
+<script type="module">
+import { storage } from "./firebase.js";
+import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-storage.js";
 
+async function testUpload() {
+  try {
+    const testFile = new File(["test"], "test.txt", { type: "text/plain" });
+    const testRef = ref(storage, "images/test.txt");
+    await uploadBytes(testRef, testFile);
+    const url = await getDownloadURL(testRef);
+    alert("✅ Upload test OK : " + url);
+  } catch (err) {
+    alert("❌ Erreur upload test : " + err.message);
+    console.error(err);
+  }
+}
+
+testUpload();
+</script>
 </body>
 </html>

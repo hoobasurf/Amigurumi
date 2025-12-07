@@ -9,21 +9,59 @@
 
 <body class="album-body">
 
-  <div class="album-container">
-    <div id="page-left" class="album-page">
-      <h2 id="title-left">Chargement…</h2>
-      <img id="img-left" class="album-img" />
-    </div>
+  <header class="site-header">
+    <h1>Album Amigurumi</h1>
+    <p class="subtitle">Glisse horizontalement pour découvrir les créations — clique pour zoom & commenter</p>
+  </header>
 
-    <div id="page-right" class="album-page">
-      <h2 id="title-right">Chargement…</h2>
-      <img id="img-right" class="album-img" />
-    </div>
-  </div>
+  <main>
+    <!-- Galerie scrollable -->
+    <section id="gallery" class="gallery" aria-label="Galerie des peluches">
+      <!-- Les cartes images seront injectées ici par JS -->
+      <div id="empty-msg" class="empty-msg">Chargement…</div>
+    </section>
+  </main>
 
-  <div class="album-controls">
-    <button id="prev">⬅️ Page précédente</button>
-    <button id="next">Page suivante ➡️</button>
+  <!-- Modal pour zoom + commentaires -->
+  <div id="modal" class="modal" aria-hidden="true">
+    <div class="modal-overlay" id="modal-overlay"></div>
+
+    <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <button id="modal-close" class="modal-close" aria-label="Fermer">✕</button>
+
+      <div class="modal-body">
+        <figure class="modal-figure">
+          <img id="modal-img" src="assets/empty.png" alt="" />
+          <figcaption id="modal-title" class="modal-title"></figcaption>
+        </figure>
+
+        <section class="comments-section" aria-label="Commentaires">
+          <h3>Commentaires</h3>
+          <div id="comments-list" class="comments-list">
+            <!-- commentaires injectés ici -->
+          </div>
+
+          <form id="comment-form" class="comment-form">
+            <input id="comment-name" type="text" placeholder="Ton prénom" maxlength="30" required />
+            <textarea id="comment-text" rows="3" placeholder="Écrire un commentaire..." maxlength="500" required></textarea>
+
+            <div class="emoji-row" id="emoji-row" aria-hidden="false">
+              <!-- quelques emojis simples -->
+              <button type="button" class="emoji-btn">😀</button>
+              <button type="button" class="emoji-btn">😍</button>
+              <button type="button" class="emoji-btn">😮</button>
+              <button type="button" class="emoji-btn">👏</button>
+              <button type="button" class="emoji-btn">❤️</button>
+            </div>
+
+            <div class="comment-actions">
+              <button type="submit" class="btn-primary">Valider</button>
+              <button type="button" id="comment-cancel" class="btn-link">Annuler</button>
+            </div>
+          </form>
+        </section>
+      </div>
+    </div>
   </div>
 
   <script type="module" src="app-visitor.js"></script>

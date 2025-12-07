@@ -1,21 +1,9 @@
-alert("Test A : début du fichier");
-
 import { db, storage } from "./firebase.js";
 import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-storage.js";
 
-alert("Test B : après imports");
-
 console.log("app-owner.js chargé !");
-console.log("db:", db);
-console.log("storage:", storage);
-
-alert("Test C : avant saveBtn");
-
-alert("saveBtn = " + saveBtn);
-alert("photosInput = " + photosInput);
-alert("status = " + status);
-alert("projectsContainer = " + projectsContainer);
+console.log("db:", db, "storage:", storage);
 
 const saveBtn = document.getElementById("save");
 const nameInput = document.getElementById("name");
@@ -62,14 +50,12 @@ async function saveCreation() {
 
     try {
       const imageRef = ref(storage, "images/" + Date.now() + "_" + file.name);
-      const uploadResult = await uploadBytes(imageRef, file);
-      console.log("Upload terminé:", uploadResult);
-
+      await uploadBytes(imageRef, file);
       const url = await getDownloadURL(imageRef);
-      console.log("URL récupérée:", url);
 
       uploadedUrls.push(url);
       status.innerHTML += `✅ Upload réussi : ${file.name}<br>`;
+      console.log("URL récupérée:", url);
     } catch (err) {
       status.innerHTML += `❌ Erreur upload ${file.name} : ${err.message}<br>`;
       console.error("Upload error:", err);
@@ -86,10 +72,11 @@ async function saveCreation() {
     await addDoc(collection(db, "creations"), {
       name,
       imageUrls: uploadedUrls,
-      mainImage: uploadedUrls[0], // première image = principale
+      mainImage: uploadedUrls[0],
       public: isPublic,
       createdAt: serverTimestamp()
     });
+
     status.innerHTML += "🎉 Création ajoutée avec succès !";
     nameInput.value = "";
     photosInput.value = "";
@@ -99,6 +86,8 @@ async function saveCreation() {
     console.error("Firestore error:", err);
   }
 }
+
+// ✅ Test upload individuel (optionnel)
 window.testUpload = async function () {
   const file = photosInput.files[0];
   if (!file) {
@@ -117,5 +106,3 @@ window.testUpload = async function () {
     console.error(err);
   }
 };
-
-alert("Test Z : fin du fichier chargée");

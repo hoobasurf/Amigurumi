@@ -30,10 +30,10 @@
   <h3>Mes projets existants :</h3>
   <div id="projects-container" style="display:flex;gap:10px;flex-wrap:wrap;"></div>
 
-  <!-- Module principal app-owner.js -->
+  <!-- Import app-owner.js -->
   <script type="module" src="./app-owner.js"></script>
 
-  <!-- Test upload Storage -->
+  <!-- Test upload rapide (optionnel) -->
   <script type="module">
     import { storage } from "./firebase.js";
     import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-storage.js";
@@ -44,14 +44,14 @@
         const testRef = ref(storage, "images/test.txt");
         await uploadBytes(testRef, testFile);
         const url = await getDownloadURL(testRef);
-        alert("✅ Upload test OK : " + url);
+        console.log("✅ Upload test OK :", url);
       } catch (err) {
-        alert("❌ Erreur upload test : " + err.message);
-        console.error(err);
+        console.error("❌ Erreur upload test :", err);
       }
     }
 
-    testUpload();
+    // Décommenter pour tester l'upload directement
+    // testUpload();
   </script>
 
 </body>

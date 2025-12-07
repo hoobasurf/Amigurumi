@@ -1,41 +1,60 @@
-import { db, storage } from "./firebase.js";
-import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
-import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-storage.js";
+import { db } from "./firebase.js";
 
-// Test d'exécution
-alert("app-owner.js chargé !");
-console.log("db:", db, "storage:", storage);
+window.saveCreation = async function() {
+  const name = document.getElementById("name").value.trim();
+  const files = Array.from(document.getElementById("photo").files);
+  const status = document.getElementById("status");
 
-const saveBtn = document.getElementById("save");
-const photosInput = document.getElementById("photo");
-const status = document.getElementById("status");
-
-saveBtn.onclick = async function () {
-  const file = photosInput.files[0];
-  if (!file) {
-    alert("Choisis une image !");
+  if (!name || files.length === 0) {
+    status.innerHTML = "⚠️ Remplis le nom et choisis au moins une image.";
     return;
   }
 
-  status.textContent = "📤 Upload en cours…";
+  status.innerHTML = "📤 Début upload via Netlify Function…";
+  const uploadedUrls = [];
 
-  try {
-    // Upload sur Firebase Storage
-    const imageRef = ref(storage, "test/" + Date.now() + "_" + file.name);
-    await uploadBytes(imageRef, file);
-    const url = await getDownloadURL(imageRef);
-    console.log("URL récupérée :", url);
-    status.textContent = "✅ Upload réussi ! URL : " + url;
+  for (let file of files) {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
 
-    // Enregistrement dans Firestore
+    await new Promise((resolve, reject) => {
+      reader.onload = async () => {
+        try {
+          const base64Data = reader.result.split(",")[1]; // enlève data:image/...
+          const res = await fetch("/.netlify/functions/upload", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name: file.name, fileBase64: base64Data })
+          });
+          const data = await res.json();
+          if (data.url) {
+            uploadedUrls.push(data.url);
+            status.innerHTML += `<br>✅ ${file.name} uploadé`;
+          } else {
+            status.innerHTML += `<br>❌ ${file.name} : Erreur function`;
+          }
+          resolve();
+        } catch (err) {
+          status.innerHTML += `<br>❌ ${file.name} : ${err.message}`;
+          reject(err);
+        }
+      };
+      reader.onerror = err => reject(err);
+    });
+  }
+
+  if (uploadedUrls.length > 0) {
+    status.innerHTML += "<br>📝 Enregistrement dans Firestore…";
+    const { collection, addDoc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js");
+
     await addDoc(collection(db, "creations"), {
-      name: file.name,
-      imageUrl: url,
+      name,
+      imageUrls: uploadedUrls,
+      mainImage: uploadedUrls[0],
+      public: true,
       createdAt: serverTimestamp()
     });
-    console.log("Document Firestore ajouté");
-  } catch (err) {
-    status.textContent = "❌ Erreur : " + err.message;
-    console.error(err);
+
+    status.innerHTML += "<br>🎉 Création ajoutée !";
   }
 };

@@ -1,55 +1,38 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Album Amigurumi</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <title>Amigurumi Galerie</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 
-<body class="album-body">
+<body>
+  <h1 class="title">Mes Petites Créations</h1>
 
-  <div class="album-container" id="album-container">
-    <!-- Les projets seront injectés ici depuis Firebase -->
-  </div>
+  <div class="gallery-scroll" id="gallery"></div>
 
-  <!-- ZONE MODAL (zoom + miniatures + commentaire + like) -->
-  <div id="modal" aria-hidden="true">
-    <div id="modal-overlay" aria-hidden="true"></div>
-
-    <div id="modal-box" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-      <div style="width:100%;display:flex;justify-content:space-between;align-items:center;">
-        <h3 id="modal-title" style="margin:0;font-size:1.05rem;color:#7a3a63">Titre</h3>
-        <button id="modal-close" aria-label="Fermer" style="border:none;background:transparent;cursor:pointer;font-size:1.2rem">✕</button>
-      </div>
-
-      <img id="modal-img" src="" alt="Zoom image">
-      <div id="mini-thumbs" style="display:flex;gap:6px;overflow-x:auto;margin:8px 0;"></div>
-
-      <button id="modal-comment-btn" type="button">Commentaires</button>
-      <button id="modal-like-btn" type="button">❤️ <span id="like-count">0</span></button>
-
-      <div id="comment-panel" aria-hidden="true">
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <strong>Commentaires</strong>
-          <button id="comment-close" style="border:none;background:transparent;cursor:pointer">✕</button>
-        </div>
-
-        <div id="comments-list" style="max-height:200px;overflow:auto;"></div>
-
-        <form id="comment-form" style="display:flex;flex-direction:column;gap:8px;">
-          <input id="comment-name" placeholder="Votre prénom (optionnel)" />
-          <textarea id="comment-text" rows="3" placeholder="Écrire un commentaire..."></textarea>
-          <div class="emoji-row" id="emoji-row">😊 😍 😂 🤩 😭 😉</div>
-          <div style="display:flex;gap:8px;justify-content:center;">
-            <button id="comment-cancel" type="button">Annuler</button>
-            <button id="comment-send" type="submit">Valider</button>
-          </div>
-        </form>
-      </div>
+  <!-- MODAL ZOOM -->
+  <div class="modal hidden" id="modal">
+    <div class="modal-content">
+      <img id="modal-img" class="modal-image">
+      <button id="comment-btn" class="comment-btn">💬 Commentaires</button>
+      <button id="close-modal" class="close-btn">✖</button>
     </div>
   </div>
 
-  <script type="module" src="app-visitor.js"></script>
+  <!-- MODAL COMMENTAIRE -->
+  <div class="modal hidden" id="comment-modal">
+    <div class="comment-box">
+      <h2>Laisser un commentaire</h2>
+
+      <input id="prenom" placeholder="Votre prénom">
+      <textarea id="commentaire" placeholder="Votre message... 😊"></textarea>
+
+      <button id="send-comment" class="validate-btn">Valider</button>
+      <button id="close-comment" class="close-btn">✖</button>
+    </div>
+  </div>
+
+  <script type="module" src="visitor.js"></script>
 </body>
 </html>

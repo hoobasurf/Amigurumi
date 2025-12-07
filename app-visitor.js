@@ -1,15 +1,18 @@
 import { db } from "./firebase.js";
-import { collection, getDocs, doc, updateDoc, arrayUnion, increment } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+import { collection, getDocs, query, where, orderBy } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 
-/* --- ELEMENTS --- */
-const projectsContainer = document.getElementById("projects-container");
+/* --- MODE ALBUM VISITEUR --- */
+const prevBtn = document.getElementById("prev");
+const nextBtn = document.getElementById("next");
+if (prevBtn) prevBtn.style.display = "none";
+if (nextBtn) nextBtn.style.display = "none";
+
+/* --- ELEMENTS MODAL --- */
 const modal = document.getElementById("modal");
 const modalOverlay = document.getElementById("modal-overlay");
 const modalImg = document.getElementById("modal-img");
 const modalTitle = document.getElementById("modal-title");
 const modalClose = document.getElementById("modal-close");
-const thumbnails = document.getElementById("thumbnails");
-
 const commentBtn = document.getElementById("modal-comment-btn");
 const commentPanel = document.getElementById("comment-panel");
 const commentClose = document.getElementById("comment-close");
@@ -18,133 +21,149 @@ const commentForm = document.getElementById("comment-form");
 const nameInput = document.getElementById("comment-name");
 const textInput = document.getElementById("comment-text");
 const emojiRow = document.getElementById("emoji-row");
-const likeBtn = document.getElementById("like-btn");
+const cancelBtn = document.getElementById("comment-cancel");
 
-let activeProject = null;
-let activeImage = null;
+/* --- LOCALSTORAGE COMMENTAIRES --- */
+const LS_KEY = "comments_amigurumi_album";
+let activeProjectId = null;
 
-/* --- OUVERTURE MODAL PROJET --- */
-async function loadProjects() {
-  const snapshot = await getDocs(collection(db, "projects"));
-  snapshot.forEach(docSnap => {
-    const project = { id: docSnap.id, ...docSnap.data() };
-    if (!project.public) return;
-
-    const div = document.createElement("div");
-    div.className = "album-page";
-    div.innerHTML = `
-      <h2>${project.name}</h2>
-      <img src="${project.images[0]}" class="album-img"/>
-    `;
-    div.querySelector("img").style.cursor = "pointer";
-    div.addEventListener("click", () => openProjectModal(project));
-    projectsContainer.appendChild(div);
-  });
+function getAllComments() {
+  try { return JSON.parse(localStorage.getItem(LS_KEY)) || {}; } 
+  catch { return {}; }
 }
 
-/* --- MODAL PROJET --- */
-function openProjectModal(project) {
-  activeProject = project;
-  activeImage = project.images[0];
-  modalImg.src = activeImage;
-  modalTitle.textContent = project.name;
+function saveAllComments(obj) { localStorage.setItem(LS_KEY, JSON.stringify(obj)); }
+function getCommentsFor(key) { const all = getAllComments(); return all[key] || []; }
+function addCommentFor(key, comment) { const all = getAllComments(); if (!all[key]) all[key]=[]; all[key].push(comment); saveAllComments(all); }
 
-  // miniatures
-  thumbnails.innerHTML = "";
-  project.images.forEach(img => {
-    const thumb = document.createElement("img");
-    thumb.src = img;
-    thumb.style.width = "60px";
-    thumb.style.height = "60px";
-    thumb.style.objectFit = "cover";
-    thumb.style.cursor = "pointer";
-    thumb.style.border = "2px solid #f7c6da";
-    thumb.style.borderRadius = "6px";
-    thumb.addEventListener("click", () => {
-      activeImage = img;
-      modalImg.src = img;
-    });
-    thumbnails.appendChild(thumb);
-  });
-
-  modal.setAttribute("aria-hidden", "false");
-  document.body.style.overflow = "hidden";
-
-  updateLikeButton();
-}
-
-/* --- FERMETURE MODAL --- */
-function closeModal() {
-  modal.setAttribute("aria-hidden", "true");
-  document.body.style.overflow = "";
-  commentPanel.setAttribute("aria-hidden", "true");
-}
-
-modalOverlay.addEventListener("click", closeModal);
-modalClose.addEventListener("click", closeModal);
-
-/* --- MODAL COMMENTAIRE --- */
-commentBtn.addEventListener("click", () => {
-  renderComments();
-  commentPanel.setAttribute("aria-hidden", "false");
-});
-
-/* --- COMMENTAIRES --- */
-commentClose.addEventListener("click", () => commentPanel.setAttribute("aria-hidden", "true"));
-
-commentForm.addEventListener("submit", async e => {
-  e.preventDefault();
-  if (!activeProject) return;
-
-  const name = nameInput.value.trim() || "Anonyme";
-  const text = textInput.value.trim();
-  if (!text) return;
-
-  const projectRef = doc(db, "projects", activeProject.id);
-  await updateDoc(projectRef, {
-    comments: arrayUnion({ name, text, date: new Date().toISOString() })
-  });
-
-  textInput.value = "";
-  nameInput.value = "";
-  renderComments();
-});
-
-/* --- RENDU COMMENTAIRES --- */
 function renderComments() {
   commentsList.innerHTML = "";
-  if (!activeProject.comments || activeProject.comments.length === 0) {
-    commentsList.innerHTML = `<div class="small-muted">Aucun commentaire</div>`;
-    return;
-  }
-  activeProject.comments.slice().reverse().forEach(c => {
-    const div = document.createElement("div");
-    div.className = "comment";
-    div.innerHTML = `<div class="who">${c.name} • ${new Date(c.date).toLocaleString()}</div><div class="txt">${c.text}</div>`;
+  const arr = getCommentsFor(activeProjectId);
+  if (!arr.length) { commentsList.innerHTML = `<div class="small-muted">Aucun commentaire</div>`; return; }
+  arr.slice().reverse().forEach(c=>{
+    const div=document.createElement("div");
+    div.className="comment";
+    div.innerHTML = `<div class="who">${c.name}<span class="small-muted"> • ${new Date(c.date).toLocaleString()}</span></div><div class="txt">${c.text}</div>`;
     commentsList.appendChild(div);
   });
 }
 
-/* --- LIKES --- */
-likeBtn.addEventListener("click", async () => {
-  if (!activeProject) return;
-  const projectRef = doc(db, "projects", activeProject.id);
-  await updateDoc(projectRef, { likes: increment(1) });
-  activeProject.likes = (activeProject.likes || 0) + 1;
-  updateLikeButton();
-});
-
-function updateLikeButton() {
-  likeBtn.textContent = `❤️ ${activeProject.likes || 0}`;
+/* --- FERMETURE MODAL --- */
+function closeAll() {
+  modal.setAttribute("aria-hidden","true");
+  commentPanel.classList.remove("show");
+  document.body.style.overflow="";
 }
 
-/* --- EMOJIS --- */
-emojiRow.addEventListener("click", e => {
-  const btn = e.target.closest("button, span");
-  if (!btn) return;
-  textInput.value += " " + btn.textContent;
+modalOverlay.addEventListener("click", closeAll);
+modalClose.addEventListener("click", closeAll);
+commentClose.addEventListener("click",()=>commentPanel.classList.remove("show"));
+cancelBtn.addEventListener("click",()=>commentPanel.classList.remove("show"));
+commentBtn.addEventListener("click",()=>{
+  renderComments();
+  commentPanel.classList.add("show");
+});
+commentForm.addEventListener("submit", e=>{
+  e.preventDefault();
+  if(!activeProjectId) return;
+  const name=nameInput.value.trim()||"Anonyme";
+  const text=textInput.value.trim();
+  if(!text) return;
+  addCommentFor(activeProjectId,{name,text,date:new Date().toISOString()});
+  commentPanel.classList.remove("show");
+  closeAll();
+});
+emojiRow.addEventListener("click", e=>{
+  const btn=e.target.closest("button,span");
+  if(!btn) return;
+  textInput.value+=" "+btn.textContent;
   textInput.focus();
 });
 
-/* --- INIT --- */
+/* --- RECUPERATION DES PROJETS FIRESTORE --- */
+async function loadProjects() {
+  const container = document.querySelector(".album-container");
+  container.innerHTML=""; // vider container avant ajout
+
+  const q = query(collection(db,"creations"), where("public","==",true), orderBy("createdAt","desc"));
+  const snapshot = await getDocs(q);
+
+  snapshot.forEach(doc=>{
+    const data = doc.data();
+    const projectDiv = document.createElement("div");
+    projectDiv.className="album-page";
+    projectDiv.dataset.id = doc.id;
+
+    // Titre
+    const h2 = document.createElement("h2");
+    h2.textContent = data.name;
+    projectDiv.appendChild(h2);
+
+    // Image principale
+    const img = document.createElement("img");
+    img.src = data.mainImage;
+    img.className="album-img";
+    projectDiv.appendChild(img);
+
+    // Clic pour ouvrir modal
+    img.style.cursor="zoom-in";
+    img.addEventListener("click",()=>{
+      activeProjectId = doc.id;
+      modalImg.src = data.mainImage;
+      modalTitle.textContent = data.name;
+
+      // miniatures
+      const miniContainer = document.createElement("div");
+      miniContainer.style.display="flex";
+      miniContainer.style.gap="6px";
+      miniContainer.style.marginTop="6px";
+      data.images.forEach(url=>{
+        const mini = document.createElement("img");
+        mini.src = url;
+        mini.style.width="50px";
+        mini.style.height="50px";
+        mini.style.objectFit="cover";
+        mini.style.border="2px solid #f7c6da";
+        mini.style.borderRadius="6px";
+        mini.style.cursor="pointer";
+        mini.addEventListener("click",()=>{ modalImg.src = url; });
+        miniContainer.appendChild(mini);
+      });
+
+      // bouton like
+      const likeBtn = document.createElement("button");
+      likeBtn.textContent = "♡ " + data.likes;
+      likeBtn.style.marginTop="8px";
+      likeBtn.style.padding="6px 12px";
+      likeBtn.style.borderRadius="8px";
+      likeBtn.style.border="none";
+      likeBtn.style.background="#ffffffcc";
+      likeBtn.style.cursor="pointer";
+      likeBtn.addEventListener("click",async()=>{
+        data.likes++;
+        likeBtn.textContent = "❤️ " + data.likes;
+        // mettre à jour Firestore
+        await db.collection("creations").doc(doc.id).update({likes: data.likes}).catch(()=>{}); 
+      });
+
+      // Supprimer miniContainer et like si déjà ajouté
+      const oldMini = modalBox.querySelector(".mini-container");
+      if(oldMini) oldMini.remove();
+      const oldLike = modalBox.querySelector(".like-btn");
+      if(oldLike) oldLike.remove();
+
+      miniContainer.className="mini-container";
+      likeBtn.className="like-btn";
+
+      modalBox.appendChild(miniContainer);
+      modalBox.appendChild(likeBtn);
+
+      modal.setAttribute("aria-hidden","false");
+      document.body.style.overflow="hidden";
+    });
+
+    container.appendChild(projectDiv);
+  });
+}
+
 loadProjects();

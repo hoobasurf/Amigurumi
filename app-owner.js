@@ -12,6 +12,11 @@ console.log("storage:", storage);
 
 alert("Test C : avant saveBtn");
 
+alert("saveBtn = " + saveBtn);
+alert("photosInput = " + photosInput);
+alert("status = " + status);
+alert("projectsContainer = " + projectsContainer);
+
 const saveBtn = document.getElementById("save");
 const nameInput = document.getElementById("name");
 const photosInput = document.getElementById("photo");

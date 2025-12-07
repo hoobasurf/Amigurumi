@@ -6,6 +6,7 @@
   <title>Gestion Amigurumi</title>
   <link rel="stylesheet" href="style.css" />
 </head>
+
 <body class="owner-body">
 
   <h1>Ajouter une création Amigurumi 🧸💖</h1>
@@ -14,10 +15,9 @@
     <label>Nom de la peluche :</label>
     <input id="name" type="text" placeholder="ex : Princesse Lapinou" />
 
-    <label>Photo(s) :</label>
+    <label>Photo :</label>
     <input id="photo" type="file" accept="image/*" multiple />
-
-    <div id="preview-container" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;"></div>
+    <div id="preview-container" style="display:flex;gap:8px;margin-top:8px;"></div>
 
     <label>Rendre publique pour famille/amies :</label>
     <select id="public">
@@ -26,6 +26,7 @@
     </select>
 
     <button id="save">Enregistrer</button>
+
     <p id="status"></p>
   </div>
 

@@ -1,21 +1,33 @@
 import { db, storage } from "./firebase.js";
-import {
-  collection,
-  addDoc,
-  serverTimestamp
-} from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-storage.js";
 
-import {
-  ref,
-  uploadBytes,
-  getDownloadURL
-} from "https://www.gstatic.com/firebasejs/12.6.0/firebase-storage.js";
+const photoInput = document.getElementById("photo");
+const previewContainer = document.getElementById("preview-container");
 
-document.getElementById("save").onclick = saveCreation;
+photoInput.addEventListener("change", () => {
+  previewContainer.innerHTML = "";
+  const files = photoInput.files;
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = document.createElement("img");
+      img.src = e.target.result;
+      img.style.width = "60px";
+      img.style.height = "60px";
+      img.style.objectFit = "cover";
+      img.style.borderRadius = "8px";
+      img.style.border = "2px solid #f7c6da";
+      previewContainer.appendChild(img);
+    };
+    reader.readAsDataURL(file);
+  }
+});
 
-async function saveCreation() {
+document.getElementById("save").onclick = async () => {
   const name = document.getElementById("name").value.trim();
-  const files = document.getElementById("photo").files;
+  const files = photoInput.files;
   const isPublic = document.getElementById("public").value === "true";
   const status = document.getElementById("status");
 
@@ -27,13 +39,11 @@ async function saveCreation() {
   status.textContent = "📤 Upload des images…";
 
   const uploadedUrls = [];
-
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
     const imageRef = ref(storage, "images/" + Date.now() + "_" + file.name);
     await uploadBytes(imageRef, file);
-    const url = await getDownloadURL(imageRef);
-    uploadedUrls.push(url);
+    uploadedUrls.push(await getDownloadURL(imageRef));
   }
 
   status.textContent = "📝 Enregistrement du projet…";
@@ -50,9 +60,10 @@ async function saveCreation() {
 
     status.textContent = "🎉 Projet ajouté avec succès !";
     document.getElementById("name").value = "";
-    document.getElementById("photo").value = "";
+    photoInput.value = "";
+    previewContainer.innerHTML = "";
   } catch (err) {
     console.error(err);
     status.textContent = "❌ Erreur lors de l'enregistrement.";
   }
-}
+};

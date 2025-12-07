@@ -1,18 +1,46 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Test Owner Firebase</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Test Upload Firebase</title>
 </head>
 <body>
-  <h1>Test Owner Firebase Storage & Firestore</h1>
+  <h1>Test Upload Firebase Storage</h1>
+  <p id="status">📤 Prêt…</p>
 
-  <p>Statut : <span id="status">En attente...</span></p>
+  <script type="module">
+    import { storage } from "./firebase.js";
+    import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-storage.js";
 
-  <input type="file" id="photo" accept="image/*">
-  <button id="save">Enregistrer</button>
+    const status = document.getElementById("status");
 
-  <script type="module" src="./app-owner.js" defer></script>
+    async function testTinyUpload() {
+      status.innerHTML = "⏳ Début upload test…";
+
+      try {
+        // Blob ultra-simple
+        const blob = new Blob(["test"], { type: "text/plain" });
+
+        // Référence Storage
+        const fileRef = ref(storage, "test/testfile.txt");
+
+        // Upload
+        await uploadBytes(fileRef, blob);
+
+        // Récup URL
+        const url = await getDownloadURL(fileRef);
+        status.innerHTML = "✅ Upload OK !<br>URL : " + url;
+        console.log("Upload OK:", url);
+
+      } catch (err) {
+        status.innerHTML = "❌ Erreur upload : " + err.message;
+        console.error("Erreur upload :", err);
+      }
+    }
+
+    // Lancer le test immédiatement
+    testTinyUpload();
+  </script>
 </body>
 </html>

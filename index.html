@@ -6,36 +6,53 @@
   <title>Album Amigurumi</title>
   <link rel="stylesheet" href="style.css" />
 </head>
+
 <body class="album-body">
 
-  <div class="album-container"></div>
+  <div class="album-container" id="album-container">
+    <!-- Les projets seront injectés ici -->
+  </div>
+
+  <div class="album-controls">
+    <button id="prev">⬅️ Page précédente</button>
+    <button id="next">Page suivante ➡️</button>
+  </div>
 
   <!-- Modal zoom + miniatures + commentaire + like -->
   <div id="modal" aria-hidden="true">
     <div id="modal-overlay" aria-hidden="true"></div>
+
     <div id="modal-box" role="dialog" aria-modal="true" aria-labelledby="modal-title">
       <div style="width:100%;display:flex;justify-content:space-between;align-items:center;">
         <h3 id="modal-title" style="margin:0;font-size:1.05rem;color:#7a3a63">Titre</h3>
         <button id="modal-close" aria-label="Fermer" style="border:none;background:transparent;cursor:pointer;font-size:1.2rem">✕</button>
       </div>
-      <img id="modal-img" src="" alt="Zoom image">
-      <div id="thumbnails" style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;"></div>
-      <div style="margin-top:10px;">
-        <button id="modal-comment-btn" style="padding:8px 12px;border-radius:12px;border:none;background:#ffffffcc;cursor:pointer;">Commentaires</button>
-        <button id="like-btn" style="padding:6px 10px;margin-left:8px;border-radius:12px;border:none;background:#ffe0f0;cursor:pointer;">❤️ <span id="like-count">0</span></button>
+
+      <img id="modal-img" src="" alt="Zoom image" />
+
+      <div id="mini-images" style="display:flex;gap:6px;margin-top:8px;overflow-x:auto;"></div>
+
+      <div style="display:flex;justify-content:center;gap:12px;margin-top:8px;">
+        <button id="modal-comment-btn" type="button">Commentaires</button>
+        <button id="modal-like-btn" type="button">♡ <span id="like-count">0</span></button>
       </div>
+
+      <!-- panneau commentaires -->
       <div id="comment-panel" aria-hidden="true">
         <div style="display:flex;justify-content:space-between;align-items:center;">
           <strong>Commentaires</strong>
           <button id="comment-close" style="border:none;background:transparent;cursor:pointer">✕</button>
         </div>
+
         <div id="comments-list" style="max-height:200px;overflow:auto;"></div>
+
         <form id="comment-form" style="display:flex;flex-direction:column;gap:8px;">
           <input id="comment-name" placeholder="Votre prénom (optionnel)" />
           <textarea id="comment-text" rows="3" placeholder="Écrire un commentaire..."></textarea>
+          <div class="emoji-row" id="emoji-row">😊 😍 😂 🤩 😭 😉</div>
           <div style="display:flex;gap:8px;justify-content:flex-end;">
             <button id="comment-cancel" type="button">Annuler</button>
-            <button type="submit">Valider</button>
+            <button id="comment-send" type="submit">Valider</button>
           </div>
         </form>
       </div>

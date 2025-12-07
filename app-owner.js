@@ -38,17 +38,21 @@ async function saveCreation() {
 
   status.textContent = "📝 Enregistrement du projet…";
 
-  // Enregistrer le projet dans Firestore
-  await addDoc(collection(db, "creations"), {
-    name,
-    mainImage: uploadedUrls[0],      // première image = principale
-    images: uploadedUrls,            // toutes les images
-    public: isPublic,
-    likes: 0,                        // initialement 0
-    createdAt: serverTimestamp()
-  });
+  try {
+    await addDoc(collection(db, "creations"), {
+      name,
+      mainImage: uploadedUrls[0],
+      images: uploadedUrls,
+      public: isPublic,
+      likes: 0,
+      createdAt: serverTimestamp()
+    });
 
-  status.textContent = "🎉 Projet ajouté avec succès !";
-  document.getElementById("name").value = "";
-  document.getElementById("photo").value = "";
+    status.textContent = "🎉 Projet ajouté avec succès !";
+    document.getElementById("name").value = "";
+    document.getElementById("photo").value = "";
+  } catch (err) {
+    console.error(err);
+    status.textContent = "❌ Erreur lors de l'enregistrement.";
+  }
 }

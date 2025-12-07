@@ -1,35 +1,18 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Gestion Amigurumi</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Owner Firebase</title>
 </head>
-<body class="owner-body">
+<body>
+  <h1>Test Owner Firebase Storage & Firestore</h1>
 
-  <h1>Ajouter une création Amigurumi 🧸💖</h1>
+  <p>Statut : <span id="status">En attente...</span></p>
 
-  <div class="form-container">
-    <label>Nom de la peluche :</label>
-    <input id="name" type="text" placeholder="ex : Princesse Lapinou" />
+  <input type="file" id="photo" accept="image/*">
+  <button id="save">Enregistrer</button>
 
-    <label>Photos :</label>
-    <input id="photo" type="file" accept="image/*" multiple />
-
-    <label>Rendre publique :</label>
-    <select id="public">
-      <option value="true">Oui (visible dans l'album)</option>
-      <option value="false">Non (privé)</option>
-    </select>
-
-    <button id="save">Enregistrer</button>
-    <p id="status">📤 Prêt à uploader des images…</p>
-  </div>
-
-  <h3>Mes projets existants :</h3>
-  <div id="projects-container" style="display:flex;gap:10px;flex-wrap:wrap;"></div>
-
-  <script type="module" src="./app-owner.js"></script>
+  <script type="module" src="./app-owner.js" defer></script>
 </body>
 </html>

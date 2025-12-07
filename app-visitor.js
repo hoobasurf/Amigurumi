@@ -1,4 +1,4 @@
-/* --- MODE ALBUM VISITEUR --- */
+/* --- MODE ALBUM VISITEUR (version finale) --- */
 
 // cacher boutons prev/next
 const prevBtn = document.getElementById("prev");
@@ -6,14 +6,14 @@ const nextBtn = document.getElementById("next");
 if (prevBtn) prevBtn.style.display = "none";
 if (nextBtn) nextBtn.style.display = "none";
 
-// éléments modal affichage image
+/* --- ELEMENTS MODAL --- */
 const modal = document.getElementById("modal");
 const modalOverlay = document.getElementById("modal-overlay");
 const modalImg = document.getElementById("modal-img");
 const modalTitle = document.getElementById("modal-title");
 const modalClose = document.getElementById("modal-close");
 
-// éléments panneau commentaire
+/* --- COMMENT PANEL --- */
 const commentBtn = document.getElementById("modal-comment-btn");
 const commentPanel = document.getElementById("comment-panel");
 const commentClose = document.getElementById("comment-close");
@@ -22,10 +22,11 @@ const commentForm = document.getElementById("comment-form");
 const nameInput = document.getElementById("comment-name");
 const textInput = document.getElementById("comment-text");
 const emojiRow = document.getElementById("emoji-row");
+const cancelBtn = document.getElementById("comment-cancel");
 
 let activeImageKey = null;
 
-/* --- STORAGE COMMENTAIRES --- */
+/* --- LOCALSTORAGE COMMENTAIRES --- */
 const LS_KEY = "comments_amigurumi_album";
 
 function getAllComments() {
@@ -52,7 +53,7 @@ function addCommentFor(key, comment) {
   saveAllComments(all);
 }
 
-/* --- AFFICHAGE COMMENTAIRES --- */
+/* --- RENDU COMMENTAIRES --- */
 function renderComments() {
   commentsList.innerHTML = "";
   const arr = getCommentsFor(activeImageKey);
@@ -66,8 +67,8 @@ function renderComments() {
     const div = document.createElement("div");
     div.className = "comment";
     div.innerHTML = `
-      <div class="who">${c.name} 
-        <span class="small-muted">• ${new Date(c.date).toLocaleString()}</span>
+      <div class="who">${c.name}
+        <span class="small-muted"> • ${new Date(c.date).toLocaleString()}</span>
       </div>
       <div class="txt">${c.text}</div>
     `;
@@ -75,14 +76,16 @@ function renderComments() {
   });
 }
 
-/* --- OUVERTURE IMAGE --- */
+/* --- OUVERTURE ZOOM IMAGE --- */
 const albumImgs = document.querySelectorAll(".album-img");
 
 albumImgs.forEach(img => {
   img.style.cursor = "zoom-in";
+
   img.addEventListener("click", () => {
     const src = img.src;
-    const title = img.closest(".album-page")?.querySelector("h2")?.textContent || "";
+    const title =
+      img.closest(".album-page")?.querySelector("h2")?.textContent || "Création";
 
     activeImageKey = src;
     modalImg.src = src;
@@ -93,7 +96,7 @@ albumImgs.forEach(img => {
   });
 });
 
-/* --- FERMETURE MODAL --- */
+/* --- FERMETURE --- */
 function closeAll() {
   modal.setAttribute("aria-hidden", "true");
   commentPanel.classList.remove("show");
@@ -113,6 +116,11 @@ commentClose.addEventListener("click", () => {
   commentPanel.classList.remove("show");
 });
 
+cancelBtn.addEventListener("click", () => {
+  commentPanel.classList.remove("show");
+});
+
+/* --- VALIDATION COMMENTAIRE --- */
 commentForm.addEventListener("submit", e => {
   e.preventDefault();
   if (!activeImageKey) return;
@@ -133,7 +141,7 @@ commentForm.addEventListener("submit", e => {
 
 /* --- EMOJIS --- */
 emojiRow.addEventListener("click", e => {
-  const btn = e.target.closest("button");
+  const btn = e.target.closest("button, span");
   if (!btn) return;
   textInput.value += " " + btn.textContent;
   textInput.focus();

@@ -1,16 +1,21 @@
-import { db } from "./firebase.js";
+import { db, storage } from "./firebase.js";
 import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-storage.js";
+
+console.log("app-owner.js chargé !");
+console.log("db:", db);
+console.log("storage:", storage);
 
 const saveBtn = document.getElementById("save");
 const nameInput = document.getElementById("name");
-const photoInput = document.getElementById("photo");
+const photosInput = document.getElementById("photo");
 const publicSelect = document.getElementById("public");
 const status = document.getElementById("status");
 const projectsContainer = document.getElementById("projects-container");
 
 saveBtn.onclick = saveCreation;
 
-// Affichage des miniatures
+// Fonction pour créer miniatures côté propriétaire
 function displayMiniatures(urls) {
   projectsContainer.innerHTML = "";
   urls.forEach(url => {
@@ -26,49 +31,53 @@ function displayMiniatures(urls) {
   });
 }
 
+// Fonction pour nettoyer le nom de fichier
+function sanitizeFileName(name) {
+  return name.replace(/\s+/g, "_")       // Remplace les espaces par _
+             .replace(/[^\w.-]/g, "");  // Supprime tous les caractères spéciaux
+}
+
 async function saveCreation() {
   const name = nameInput.value.trim();
-  const files = Array.from(photoInput.files);
+  const files = Array.from(photosInput.files);
   const isPublic = publicSelect.value === "true";
 
-  if (!name || files.length === 0) {
+  if (!name || !files.length) {
     status.innerHTML = "⚠️ Remplis le nom et choisis au moins une image.";
     return;
   }
 
-  status.innerHTML = "📤 Début upload…";
+  status.innerHTML = "📤 Début de l'upload…<br>";
   const uploadedUrls = [];
 
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
-    status.innerHTML += `<br>⏳ Upload de ${file.name}…`;
+    const cleanName = sanitizeFileName(file.name);
+    status.innerHTML += `⏳ Upload de l'image ${i + 1} / ${files.length} : ${file.name}…<br>`;
+    console.log(`Upload fichier: ${file.name}, taille: ${file.size} octets`);
 
     try {
-      const formData = new FormData();
-      formData.append("file", file);
+      const imageRef = ref(storage, `images/${Date.now()}_${cleanName}`);
+      const uploadResult = await uploadBytes(imageRef, file);
+      console.log("Upload terminé:", uploadResult);
 
-      const res = await fetch("/.netlify/functions/upload", {
-        method: "POST",
-        body: formData
-      });
-      const data = await res.json();
+      const url = await getDownloadURL(imageRef);
+      console.log("URL récupérée:", url);
 
-      if (!res.ok) throw new Error(data.error || "Erreur inconnue");
-
-      uploadedUrls.push(data.url);
-      status.innerHTML += ` ✅ ${file.name} uploadé`;
+      uploadedUrls.push(url);
+      status.innerHTML += `✅ Upload réussi : ${file.name}<br>`;
     } catch (err) {
-      status.innerHTML += `<br>❌ ${file.name} : ${err.message}`;
-      console.error(err);
+      status.innerHTML += `❌ Erreur upload ${file.name} : ${err.message}<br>`;
+      console.error("Upload error:", err);
     }
   }
 
-  if (uploadedUrls.length === 0) {
-    status.innerHTML += "<br>❌ Aucun fichier n'a pu être uploadé.";
+  if (!uploadedUrls.length) {
+    status.innerHTML += "❌ Aucun fichier n'a pu être uploadé.";
     return;
   }
 
-  status.innerHTML += "<br>📝 Enregistrement dans Firestore…";
+  status.innerHTML += "📝 Enregistrement dans Firestore…<br>";
   try {
     await addDoc(collection(db, "creations"), {
       name,
@@ -77,12 +86,12 @@ async function saveCreation() {
       public: isPublic,
       createdAt: serverTimestamp()
     });
-    status.innerHTML += "<br>🎉 Création ajoutée !";
-    displayMiniatures(uploadedUrls);
+    status.innerHTML += "🎉 Création ajoutée avec succès !";
     nameInput.value = "";
-    photoInput.value = "";
+    photosInput.value = "";
+    displayMiniatures(uploadedUrls);
   } catch (err) {
-    status.innerHTML += `<br>❌ Erreur Firestore : ${err.message}`;
-    console.error(err);
+    status.innerHTML += `❌ Erreur Firestore : ${err.message}`;
+    console.error("Firestore error:", err);
   }
 }

@@ -6,7 +6,6 @@
   <title>Gestion Amigurumi</title>
   <link rel="stylesheet" href="style.css" />
 </head>
-
 <body class="owner-body">
 
   <h1>Ajouter une création Amigurumi 🧸💖</h1>
@@ -25,46 +24,12 @@
     </select>
 
     <button id="save">Enregistrer</button>
-    <p id="status">📤 Upload des images…</p>
+    <p id="status">📤 Prêt à uploader des images…</p>
   </div>
 
   <h3>Mes projets existants :</h3>
   <div id="projects-container" style="display:flex;gap:10px;flex-wrap:wrap;"></div>
 
- 
-<script type="module">
-import { db, storage } from "./firebase.js";
-import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
-import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-storage.js";
-
-alert(storage ? "✅ Storage OK" : "❌ Storage NON initialisé");
-
-const testRef = ref(storage, "images/test.txt");
-alert(testRef ? "✅ Test ref OK: images/test.txt" : "❌ Test ref NON créé");
-
-try {
-  // Test Firestore en lecture
-  const testCollection = collection(db, "creations");
-  alert(testCollection ? "✅ Firestore OK" : "❌ Firestore NON initialisé");
-} catch (err) {
-  alert("❌ Erreur Firestore: " + err.message);
-}
-
-// Test rapide upload Storage (optionnel, tu peux commenter après test)
-async function testUpload() {
-  try {
-    const blob = new Blob(["test"], { type: "text/plain" });
-    const uploadRef = ref(storage, "images/test_upload.txt");
-    await uploadBytes(uploadRef, blob);
-    const url = await getDownloadURL(uploadRef);
-    alert("✅ Upload OK: " + url);
-  } catch (err) {
-    alert("❌ Erreur upload: " + err.message);
-  }
-}
-
-// Décommenter pour tester l'upload
-// testUpload();
-</script>
+  <script type="module" src="app-owner.js"></script>
 </body>
 </html>

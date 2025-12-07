@@ -15,35 +15,36 @@ document.getElementById("save").onclick = saveCreation;
 
 async function saveCreation() {
   const name = document.getElementById("name").value.trim();
-  const files = Array.from(document.getElementById("photo").files);
+  const files = document.getElementById("photo").files;
   const isPublic = document.getElementById("public").value === "true";
   const status = document.getElementById("status");
 
-  if (!name || files.length === 0) {
+  if (!name || !files.length) {
     status.textContent = "⚠️ Remplis le nom et choisis au moins une image.";
     return;
   }
 
   status.textContent = "📤 Upload des images…";
 
-  // Upload multiple images
-  const imageUrls = [];
-  for (let file of files) {
-    const imageRef = ref(storage, `images/${Date.now()}_${file.name}`);
+  const uploadedUrls = [];
+
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    const imageRef = ref(storage, "images/" + Date.now() + "_" + file.name);
     await uploadBytes(imageRef, file);
     const url = await getDownloadURL(imageRef);
-    imageUrls.push(url);
+    uploadedUrls.push(url);
   }
 
-  status.textContent = "📝 Enregistrement dans la base…";
+  status.textContent = "📝 Enregistrement du projet…";
 
-  // Enregistrer projet avec images dans Firestore
-  await addDoc(collection(db, "projects"), {
+  // Enregistrer le projet dans Firestore
+  await addDoc(collection(db, "creations"), {
     name,
-    images: imageUrls,
+    mainImage: uploadedUrls[0],      // première image = principale
+    images: uploadedUrls,            // toutes les images
     public: isPublic,
-    likes: 0,
-    comments: [],
+    likes: 0,                        // initialement 0
     createdAt: serverTimestamp()
   });
 

@@ -23,7 +23,12 @@
       <option value="false">Non (privé)</option>
     </select>
 
+    <!-- ✅ Bouton SAVE pour enregistrer la création -->
+    <button id="save">Enregistrer la création</button>
+    
+    <!-- Bouton test upload (optionnel) -->
     <button onclick="testUpload()">Test Upload</button>
+
     <p id="status">📤 Prêt à uploader des images…</p>
   </div>
 
@@ -31,11 +36,5 @@
   <div id="projects-container" style="display:flex;gap:10px;flex-wrap:wrap;"></div>
 
   <script type="module" src="/app-owner.js" defer></script>
-
-  <script>
-function testUpload() {
-    alert("⚠️ testUpload dans owner.html a été lancé !");
-}
-</script>
 </body>
 </html>

@@ -1,35 +1,35 @@
-import { getStorage } from "firebase-admin/storage";
-import { initializeApp, cert } from "firebase-admin/app";
-import multiparty from "multiparty";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { initializeApp } from "firebase/app";
 
-// Initialisation Firebase Admin
-const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+const firebaseConfig = {
+  apiKey: "AIzaSyDbkbhXdZO20XdQpg3GhShFnqBVSpTdJKQ",
+  authDomain: "amigurumi-2e7df.firebaseapp.com",
+  projectId: "amigurumi-2e7df",
+  storageBucket: "amigurumi-2e7df.appspot.com",
+  messagingSenderId: "92443765428",
+  appId: "1:92443765428:web:23e5aab383547b6f8885e1"
+};
 
-initializeApp({
-  credential: cert(serviceAccount),
-  storageBucket: "amigurumi-2e7df.appspot.com"
-});
-
-const bucket = getStorage().bucket();
+const app = initializeApp(firebaseConfig);
+const storage = getStorage(app);
 
 export async function handler(event, context) {
-  return new Promise((resolve) => {
-    const form = new multiparty.Form();
-    form.parse(event, async (err, fields, files) => {
-      if (err) {
-        resolve({ statusCode: 500, body: JSON.stringify({ error: err.message }) });
-        return;
-      }
+  try {
+    const body = event.body;
+    const fileData = Buffer.from(event.body, "base64"); // si base64
+    // ici adapter pour multipart (Netlify auto gère FormData)
+    
+    // ⚠️ À compléter selon la librairie Netlify pour parser multipart/form-data
+    // Puis uploadBytes(ref(storage, `images/${filename}`), fileBuffer)
 
-      const file = files.file[0];
-      const blob = bucket.file(`images/${Date.now()}_${file.originalFilename}`);
-      await blob.save(file.buffer, { resumable: false });
-      const url = `https://storage.googleapis.com/${bucket.name}/${blob.name}`;
-
-      resolve({
-        statusCode: 200,
-        body: JSON.stringify({ url })
-      });
-    });
-  });
+    return {
+      statusCode: 200,
+      body: JSON.stringify({ url: "https://..." })
+    };
+  } catch (err) {
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: err.message })
+    };
+  }
 }

@@ -31,6 +31,19 @@
   <h3>Mes projets existants :</h3>
   <div id="projects-container" style="display:flex;gap:10px;flex-wrap:wrap;"></div>
 
-  <script type="module" src="app-owner.js"></script>
+ 
+<script type="module" src="app-owner.js"></script>
+
+<script type="module">
+  import { storage } from "./firebase.js";
+  import { ref } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-storage.js";
+
+  console.log("Storage object:", storage);
+
+  const testRef = ref(storage, "images/test.txt");
+  console.log("Test reference:", testRef);
+
+  alert("Regarde la console pour Storage object et testRef (si possible via Safari Develop).");
+</script>
 </body>
 </html>

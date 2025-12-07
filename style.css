@@ -51,3 +51,115 @@ body {
 .album-controls button:hover {
   background: #ffa5ce;
 }
+
+/* --- gallery horizontal + hide prev/next (minimal, non-intrusif) --- */
+.album-container {
+  /* permet de scroller horizontalement si nécessaire,
+     visuellement ça ne change pas si fenêtre large */
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.album-container .album-page {
+  flex: 0 0 auto; /* empêche le stretch, chaque page garde sa taille */
+  scroll-snap-align: start;
+}
+
+/* masquer les boutons "Page précédente / suivante" sans les supprimer */
+#prev, #next {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* enlève l'affichage de la scrollbar si tu veux propre */
+.album-container::-webkit-scrollbar { height: 8px; display: none; }
+
+/* --- Modal zoom + commentaires (pastel, léger flou) --- */
+#modal {
+  position: fixed;
+  inset: 0;
+  display: none;              /* caché par défaut */
+  justify-content: center;
+  align-items: center;
+  z-index: 1200;
+  pointer-events: none;
+}
+#modal[aria-hidden="false"] {
+  display: flex;
+  pointer-events: auto;
+}
+#modal-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(255,255,255,0.25);
+  backdrop-filter: blur(8px);
+}
+#modal-box {
+  position: relative;
+  max-width: 92%;
+  max-height: 88%;
+  border-radius: 14px;
+  background: linear-gradient(180deg,#fffafc,#fff6fb);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.18);
+  padding: 14px;
+  z-index: 1210;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+}
+
+/* l'image zoomée */
+#modal-img {
+  max-width: 100%;
+  max-height: 60vh;
+  border-radius: 10px;
+  border: 3px solid #f7c6da;
+  background: #ffe9f3;
+  object-fit: contain;
+}
+
+/* bouton discret commentaires */
+#modal-comment-btn {
+  margin-top: 8px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: none;
+  background: #ffffffcc;
+  backdrop-filter: blur(4px);
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+}
+
+/* zone commentaires (modal secondaire incorporée dans le même modal) */
+#comment-panel {
+  width: 100%;
+  max-width: 420px;
+  background: #fbf7ff;
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+}
+#comment-panel.show { display: flex; }
+
+#comment-panel input, #comment-panel textarea {
+  width: 100%;
+  padding: 10px;
+  border-radius: 10px;
+  border: none;
+  background: #fff;
+  font-size: 0.95rem;
+}
+
+#comment-panel .emoji-row { display:flex; gap:8px; font-size:1.2rem; user-select:none; cursor:pointer; }
+
+.comment { padding:8px 10px; border-radius:8px; background:#fffafc; box-shadow: 0 2px 6px rgba(0,0,0,0.04); }

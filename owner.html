@@ -23,33 +23,36 @@
       <option value="false">Non (privé)</option>
     </select>
 
-    <button id="save">Enregistrer</button>
+    <button id="save">Enregistrer la création</button>
     <p id="status">📤 Prêt à uploader des images…</p>
   </div>
 
   <h3>Mes projets existants :</h3>
   <div id="projects-container" style="display:flex;gap:10px;flex-wrap:wrap;"></div>
 
-  <!-- App Owner JS -->
+  <!-- Module principal app-owner.js -->
   <script type="module" src="./app-owner.js"></script>
-<script type="module">
-import { storage } from "./firebase.js";
-import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-storage.js";
 
-async function testUpload() {
-  try {
-    const testFile = new File(["test"], "test.txt", { type: "text/plain" });
-    const testRef = ref(storage, "images/test.txt");
-    await uploadBytes(testRef, testFile);
-    const url = await getDownloadURL(testRef);
-    alert("✅ Upload test OK : " + url);
-  } catch (err) {
-    alert("❌ Erreur upload test : " + err.message);
-    console.error(err);
-  }
-}
+  <!-- Test upload Storage -->
+  <script type="module">
+    import { storage } from "./firebase.js";
+    import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-storage.js";
 
-testUpload();
-</script>
+    async function testUpload() {
+      try {
+        const testFile = new File(["test"], "test.txt", { type: "text/plain" });
+        const testRef = ref(storage, "images/test.txt");
+        await uploadBytes(testRef, testFile);
+        const url = await getDownloadURL(testRef);
+        alert("✅ Upload test OK : " + url);
+      } catch (err) {
+        alert("❌ Erreur upload test : " + err.message);
+        console.error(err);
+      }
+    }
+
+    testUpload();
+  </script>
+
 </body>
 </html>

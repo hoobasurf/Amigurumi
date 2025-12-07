@@ -1,20 +1,21 @@
+// app-owner.js
 import { db, storage } from "./firebase.js";
 import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
-import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-storage.js";
+import { ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-storage.js";
 
 console.log("app-owner.js chargé !");
-console.log("db:", db);
-console.log("storage:", storage);
+console.log("db:", db, "storage:", storage);
 
-// Récupération des éléments
-const saveBtn = document.getElementById("saveCreationBtn");
+const saveBtn = document.getElementById("save");
 const nameInput = document.getElementById("name");
 const photosInput = document.getElementById("photo");
 const publicSelect = document.getElementById("public");
 const status = document.getElementById("status");
 const projectsContainer = document.getElementById("projects-container");
 
-// Fonction affichage miniatures
+saveBtn.onclick = saveCreation;
+
+// Affichage miniatures
 function displayMiniatures(urls) {
   projectsContainer.innerHTML = "";
   urls.forEach(url => {
@@ -30,8 +31,35 @@ function displayMiniatures(urls) {
   });
 }
 
-// Fonction principale saveCreation
-window.saveCreation = async function () {
+// Upload d’un fichier avec suivi progress
+function uploadFile(file) {
+  return new Promise((resolve, reject) => {
+    const imageRef = ref(storage, "images/" + Date.now() + "_" + file.name);
+    const uploadTask = uploadBytesResumable(imageRef, file);
+
+    uploadTask.on('state_changed',
+      snapshot => {
+        const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+        status.innerHTML = `⏳ Upload ${file.name} : ${progress}%`;
+      },
+      error => {
+        console.error("Upload error:", error);
+        reject(error);
+      },
+      async () => {
+        try {
+          const url = await getDownloadURL(uploadTask.snapshot.ref);
+          resolve(url);
+        } catch (err) {
+          reject(err);
+        }
+      }
+    );
+  });
+}
+
+// Fonction principale
+async function saveCreation() {
   const name = nameInput.value.trim();
   const files = Array.from(photosInput.files);
   const isPublic = publicSelect.value === "true";
@@ -41,51 +69,36 @@ window.saveCreation = async function () {
     return;
   }
 
-  status.innerHTML = "📤 Début upload…<br>";
-  console.log("Début upload fichiers :", files);
-
+  status.innerHTML = "📤 Début de l'upload…<br>";
   const uploadedUrls = [];
 
-  for (let i = 0; i < files.length; i++) {
-    const file = files[i];
-    status.innerHTML += `⏳ Upload image ${i + 1} / ${files.length} : ${file.name}…<br>`;
-    console.log(`Upload fichier: ${file.name}, taille: ${file.size} octets`);
-
+  for (let file of files) {
     try {
-      const imageRef = ref(storage, "images/" + Date.now() + "_" + file.name);
-      const uploadResult = await uploadBytes(imageRef, file);
-      console.log("Upload terminé:", uploadResult);
-
-      const url = await getDownloadURL(imageRef);
-      console.log("URL récupérée:", url);
-
+      const url = await uploadFile(file);
       uploadedUrls.push(url);
       status.innerHTML += `✅ Upload réussi : ${file.name}<br>`;
     } catch (err) {
       status.innerHTML += `❌ Erreur upload ${file.name} : ${err.message}<br>`;
-      console.error("Upload error:", err);
+      console.error(err);
     }
   }
 
-  if (!uploadedUrls.length) {
+  if (uploadedUrls.length === 0) {
     status.innerHTML += "❌ Aucun fichier n'a pu être uploadé.";
     return;
   }
 
+  // Enregistrement Firestore
   status.innerHTML += "📝 Enregistrement dans Firestore…<br>";
-
   try {
-    const docRef = await addDoc(collection(db, "creations"), {
+    await addDoc(collection(db, "creations"), {
       name,
       imageUrls: uploadedUrls,
-      mainImage: uploadedUrls[0], // première image = principale
+      mainImage: uploadedUrls[0],
       public: isPublic,
       createdAt: serverTimestamp()
     });
     status.innerHTML += "🎉 Création ajoutée avec succès !";
-    console.log("Document Firestore ajouté:", docRef.id);
-
-    // Reset form
     nameInput.value = "";
     photosInput.value = "";
     displayMiniatures(uploadedUrls);
@@ -93,7 +106,4 @@ window.saveCreation = async function () {
     status.innerHTML += `❌ Erreur Firestore : ${err.message}`;
     console.error("Firestore error:", err);
   }
-};
-
-// Associer le bouton
-saveBtn.onclick = window.saveCreation;
+}

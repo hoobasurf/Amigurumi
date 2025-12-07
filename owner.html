@@ -1,35 +1,23 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Gestion Amigurumi</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <title>Amigurumi - Owner</title>
+  <link rel="stylesheet" href="style.css">
 </head>
-<body class="owner-body">
 
-  <h1>Ajouter une création Amigurumi 🧸💖</h1>
+<body>
+  <h1 class="title">Ajouter une création</h1>
 
-  <div class="form-container">
-    <label>Nom de la peluche :</label>
-    <input id="name" type="text" placeholder="ex : Princesse Lapinou" />
-
-    <label>Photos :</label>
-    <input id="photo" type="file" accept="image/*" multiple />
-
-    <label>Rendre publique :</label>
-    <select id="public">
-      <option value="true">Oui (visible dans l'album)</option>
-      <option value="false">Non (privé)</option>
-    </select>
-
-    <button id="save">Enregistrer création</button>
-    <p id="status">📤 Prêt à uploader des images…</p>
+  <div class="owner-box">
+    <input id="name" placeholder="Nom de la création">
+    <input id="photo" type="file" accept="image/*">
+    <button id="add" class="validate-btn">Ajouter</button>
   </div>
 
-  <h3>Mes projets existants :</h3>
-  <div id="projects-container" style="display:flex;gap:10px;flex-wrap:wrap;"></div>
+  <h2 class="subtitle">Liste des créations</h2>
+  <div id="owner-list"></div>
 
-  <script type="module" src="./app-owner.js"></script>
+  <script type="module" src="owner.js"></script>
 </body>
 </html>

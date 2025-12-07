@@ -1,13 +1,13 @@
 import { db } from "./firebase.js";
-import { collection, getDocs, query, where, orderBy } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+import { collection, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 
-const container = document.querySelector(".album-container");
+/* --- MODE ALBUM VISITEUR --- */
+const albumContainer = document.querySelector(".album-container");
 const modal = document.getElementById("modal");
 const modalOverlay = document.getElementById("modal-overlay");
 const modalImg = document.getElementById("modal-img");
 const modalTitle = document.getElementById("modal-title");
 const modalClose = document.getElementById("modal-close");
-const thumbnailsDiv = document.getElementById("thumbnails");
 const commentBtn = document.getElementById("modal-comment-btn");
 const commentPanel = document.getElementById("comment-panel");
 const commentClose = document.getElementById("comment-close");
@@ -15,112 +15,171 @@ const commentsList = document.getElementById("comments-list");
 const commentForm = document.getElementById("comment-form");
 const nameInput = document.getElementById("comment-name");
 const textInput = document.getElementById("comment-text");
+const emojiRow = document.getElementById("emoji-row");
 const cancelBtn = document.getElementById("comment-cancel");
-const likeBtn = document.getElementById("like-btn");
-const likeCount = document.getElementById("like-count");
 
-const LS_KEY_COMMENTS = "amigurumi_comments";
-const LS_KEY_LIKES = "amigurumi_likes";
+let activeProject = null;
 
-function getComments(key){return JSON.parse(localStorage.getItem(LS_KEY_COMMENTS)||"{}")[key]||[];}
-function saveComment(key, comment){
-  const all = JSON.parse(localStorage.getItem(LS_KEY_COMMENTS)||"{}");
-  if(!all[key]) all[key]=[];
+/* --- LOCALSTORAGE COMMENTAIRES --- */
+const LS_KEY = "comments_amigurumi_album";
+
+function getAllComments() {
+  try { return JSON.parse(localStorage.getItem(LS_KEY)) || {}; } 
+  catch { return {}; }
+}
+
+function saveAllComments(obj) {
+  localStorage.setItem(LS_KEY, JSON.stringify(obj));
+}
+
+function getCommentsFor(key) {
+  const all = getAllComments();
+  return all[key] || [];
+}
+
+function addCommentFor(key, comment) {
+  const all = getAllComments();
+  if (!all[key]) all[key] = [];
   all[key].push(comment);
-  localStorage.setItem(LS_KEY_COMMENTS,JSON.stringify(all));
-}
-function getLikes(key){return JSON.parse(localStorage.getItem(LS_KEY_LIKES)||"{}")[key]||0;}
-function toggleLike(key){
-  const all = JSON.parse(localStorage.getItem(LS_KEY_LIKES)||"{}");
-  all[key] = all[key]?0:1;
-  localStorage.setItem(LS_KEY_LIKES,JSON.stringify(all));
-  return all[key];
+  saveAllComments(all);
 }
 
-async function loadProjects(){
-  container.innerHTML="";
-  const q = query(collection(db,"creations"),where("public","==",true),orderBy("createdAt","desc"));
-  const snapshot = await getDocs(q);
+/* --- AFFICHAGE DES PROJETS --- */
+async function loadProjects() {
+  albumContainer.innerHTML = "";
+  const snapshot = await getDocs(collection(db, "creations"));
 
-  snapshot.forEach(doc=>{
-    const data=doc.data();
-    const div=document.createElement("div");
-    div.className="album-page";
-    const h2=document.createElement("h2");
-    h2.textContent=data.name;
-    div.appendChild(h2);
-    const img=document.createElement("img");
-    img.src=data.mainImage;
-    img.className="album-img";
-    div.appendChild(img);
+  snapshot.forEach(docSnap => {
+    const data = docSnap.data();
+    if (!data.public) return;
 
-    img.addEventListener("click",()=>{
-      modalImg.src=data.mainImage;
-      modalTitle.textContent=data.name;
+    const page = document.createElement("div");
+    page.className = "album-page";
 
-      thumbnailsDiv.innerHTML="";
-      data.images.forEach(u=>{
-        const thumb=document.createElement("img");
-        thumb.src=u;
-        thumb.style.width="50px";
-        thumb.style.height="50px";
-        thumb.style.objectFit="cover";
-        thumb.style.borderRadius="6px";
-        thumb.style.border="2px solid #f7c6da";
-        thumb.style.cursor="pointer";
-        thumb.addEventListener("click",()=>{modalImg.src=u;});
-        thumbnailsDiv.appendChild(thumb);
-      });
+    const title = document.createElement("h2");
+    title.textContent = data.name;
+    page.appendChild(title);
 
-      likeCount.textContent=data.likes;
-      likeBtn.dataset.projectId=doc.id;
+    const img = document.createElement("img");
+    img.className = "album-img";
+    img.src = data.mainImage;
+    page.appendChild(img);
 
-      modal.setAttribute("aria-hidden","false");
-      document.body.style.overflow="hidden";
-    });
+    // like count
+    const likeDiv = document.createElement("div");
+    likeDiv.style.fontSize = "0.9rem";
+    likeDiv.style.marginTop = "6px";
+    likeDiv.textContent = `❤️ ${data.likes || 0}`;
+    page.appendChild(likeDiv);
 
-    container.appendChild(div);
+    img.style.cursor = "zoom-in";
+    img.addEventListener("click", () => openProjectModal(data, docSnap.id));
+
+    albumContainer.appendChild(page);
   });
 }
 
-modalClose.addEventListener("click",()=>{modal.setAttribute("aria-hidden","true");document.body.style.overflow="";});
-modalOverlay.addEventListener("click",()=>{modal.setAttribute("aria-hidden","true");document.body.style.overflow="";});
+/* --- MODAL PROJECT --- */
+function openProjectModal(projectData, projectId) {
+  activeProject = { ...projectData, id: projectId };
 
-// COMMENTAIRES
-commentBtn.addEventListener("click",()=>{
-  const key = modalTitle.textContent;
-  commentsList.innerHTML="";
-  const arr = getComments(key);
-  if(!arr.length) commentsList.innerHTML="<div class='small-muted'>Aucun commentaire</div>";
-  arr.slice().reverse().forEach(c=>{
-    const div=document.createElement("div");
-    div.innerHTML=`<div class="who">${c.name} • ${new Date(c.date).toLocaleString()}</div><div>${c.text}</div>`;
+  modalImg.src = projectData.mainImage;
+  modalTitle.textContent = projectData.name;
+
+  // miniatures si plusieurs images
+  const thumbContainer = document.createElement("div");
+  thumbContainer.style.display = "flex";
+  thumbContainer.style.gap = "8px";
+  thumbContainer.style.marginTop = "10px";
+
+  projectData.images.forEach(url => {
+    const thumb = document.createElement("img");
+    thumb.src = url;
+    thumb.style.width = "50px";
+    thumb.style.height = "50px";
+    thumb.style.objectFit = "cover";
+    thumb.style.borderRadius = "6px";
+    thumb.style.cursor = "pointer";
+    thumb.addEventListener("click", () => { modalImg.src = url; });
+    thumbContainer.appendChild(thumb);
+  });
+
+  // ajoute container miniatures si pas déjà présent
+  const oldThumbs = modal.querySelector("#thumb-container");
+  if (oldThumbs) oldThumbs.remove();
+  thumbContainer.id = "thumb-container";
+  modal.querySelector("#modal-box").appendChild(thumbContainer);
+
+  modal.setAttribute("aria-hidden", "false");
+  document.body.style.overflow = "hidden";
+}
+
+/* --- FERMETURE --- */
+function closeAll() {
+  modal.setAttribute("aria-hidden", "true");
+  commentPanel.classList.remove("show");
+  document.body.style.overflow = "";
+}
+
+modalOverlay.addEventListener("click", closeAll);
+modalClose.addEventListener("click", closeAll);
+
+/* --- COMMENTAIRES --- */
+commentBtn.addEventListener("click", () => {
+  if (!activeProject) return;
+  renderComments();
+  commentPanel.classList.add("show");
+});
+
+commentClose.addEventListener("click", () => commentPanel.classList.remove("show"));
+cancelBtn.addEventListener("click", () => commentPanel.classList.remove("show"));
+
+commentForm.addEventListener("submit", e => {
+  e.preventDefault();
+  if (!activeProject) return;
+
+  const name = nameInput.value.trim() || "Anonyme";
+  const text = textInput.value.trim();
+  if (!text) return;
+
+  addCommentFor(activeProject.id, {
+    name,
+    text,
+    date: new Date().toISOString()
+  });
+
+  commentPanel.classList.remove("show");
+  closeAll();
+});
+
+/* --- RENDU COMMENTAIRES --- */
+function renderComments() {
+  commentsList.innerHTML = "";
+  const arr = getCommentsFor(activeProject.id);
+  if (!arr.length) {
+    commentsList.innerHTML = `<div class="small-muted">Aucun commentaire</div>`;
+    return;
+  }
+  arr.slice().reverse().forEach(c => {
+    const div = document.createElement("div");
+    div.className = "comment";
+    div.innerHTML = `
+      <div class="who">${c.name}
+        <span class="small-muted"> • ${new Date(c.date).toLocaleString()}</span>
+      </div>
+      <div class="txt">${c.text}</div>
+    `;
     commentsList.appendChild(div);
   });
-  commentPanel.style.display="flex";
+}
+
+/* --- EMOJIS --- */
+emojiRow.addEventListener("click", e => {
+  const btn = e.target.closest("button, span");
+  if (!btn) return;
+  textInput.value += " " + btn.textContent;
+  textInput.focus();
 });
 
-commentClose.addEventListener("click",()=>commentPanel.style.display="none");
-cancelBtn.addEventListener("click",()=>commentPanel.style.display="none");
-
-commentForm.addEventListener("submit",(e)=>{
-  e.preventDefault();
-  const key=modalTitle.textContent;
-  const name=nameInput.value.trim()||"Anonyme";
-  const text=textInput.value.trim();
-  if(!text) return;
-  saveComment(key,{name,text,date:new Date().toISOString()});
-  commentPanel.style.display="none";
-  nameInput.value="";
-  textInput.value="";
-});
-
-// LIKE
-likeBtn.addEventListener("click",()=>{
-  const key=likeBtn.dataset.projectId;
-  const count = getLikes(key)?0:1;
-  likeCount.textContent=count;
-  toggleLike(key);
-});
-
+/* --- LOAD --- */
 loadProjects();

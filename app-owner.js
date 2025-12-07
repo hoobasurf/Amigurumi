@@ -7,8 +7,25 @@ const nameInput = document.getElementById("name");
 const photosInput = document.getElementById("photo");
 const publicSelect = document.getElementById("public");
 const status = document.getElementById("status");
+const projectsContainer = document.getElementById("projects-container");
 
 saveBtn.onclick = saveCreation;
+
+// Fonction pour créer miniatures côté propriétaire
+function displayMiniatures(urls) {
+  projectsContainer.innerHTML = "";
+  urls.forEach(url => {
+    const img = document.createElement("img");
+    img.src = url;
+    img.style.width = "80px";
+    img.style.height = "80px";
+    img.style.objectFit = "cover";
+    img.style.border = "2px solid #f7c6da";
+    img.style.borderRadius = "8px";
+    img.style.margin = "3px";
+    projectsContainer.appendChild(img);
+  });
+}
 
 async function saveCreation() {
   const name = nameInput.value.trim();
@@ -21,18 +38,15 @@ async function saveCreation() {
   }
 
   status.innerHTML = "📤 Début de l'upload…<br>";
-
   const uploadedUrls = [];
 
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
     status.innerHTML += `⏳ Upload de l'image ${i + 1} / ${files.length} : ${file.name}…<br>`;
-    console.log(`Début upload fichier: ${file.name}, taille: ${file.size} octets`);
+    console.log(`Upload fichier: ${file.name}, taille: ${file.size} octets`);
 
     try {
       const imageRef = ref(storage, "images/" + Date.now() + "_" + file.name);
-      console.log("Référence storage:", imageRef);
-
       const uploadResult = await uploadBytes(imageRef, file);
       console.log("Upload terminé:", uploadResult);
 
@@ -53,20 +67,18 @@ async function saveCreation() {
   }
 
   status.innerHTML += "📝 Enregistrement dans Firestore…<br>";
-  console.log("Données à enregistrer:", { name, imageUrls: uploadedUrls, public: isPublic });
-
   try {
-    const docRef = await addDoc(collection(db, "creations"), {
+    await addDoc(collection(db, "creations"), {
       name,
       imageUrls: uploadedUrls,
+      mainImage: uploadedUrls[0], // première image = principale
       public: isPublic,
       createdAt: serverTimestamp()
     });
-    console.log("Document Firestore ajouté:", docRef.id);
-
     status.innerHTML += "🎉 Création ajoutée avec succès !";
     nameInput.value = "";
     photosInput.value = "";
+    displayMiniatures(uploadedUrls);
   } catch (err) {
     status.innerHTML += `❌ Erreur Firestore : ${err.message}`;
     console.error("Firestore error:", err);

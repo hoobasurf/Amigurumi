@@ -3,51 +3,33 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Test Upload Firebase Storage</title>
+  <title>Gestion Amigurumi</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
-<body>
+<body class="owner-body">
 
-<h1>Test Upload Firebase Storage</h1>
+  <h1>Ajouter une création Amigurumi 🧸💖</h1>
 
-<input type="file" id="fileInput" />
-<button id="btnUpload">Tester Upload</button>
-<p id="status">📤 Prêt…</p>
+  <div class="form-container">
+    <label>Nom de la peluche :</label>
+    <input id="name" type="text" placeholder="ex : Princesse Lapinou" />
 
-<script type="module">
-import { storage } from "./firebase.js";
-import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-storage.js";
+    <label>Photos :</label>
+    <input id="photo" type="file" accept="image/*" multiple />
 
-const fileInput = document.getElementById("fileInput");
-const btnUpload = document.getElementById("btnUpload");
-const status = document.getElementById("status");
+    <label>Rendre publique :</label>
+    <select id="public">
+      <option value="true">Oui (visible dans l'album)</option>
+      <option value="false">Non (privé)</option>
+    </select>
 
-btnUpload.onclick = async function() {
-  const file = fileInput.files[0];
-  if (!file) {
-    alert("⚠️ Choisis un fichier !");
-    return;
-  }
+    <button id="save">Enregistrer</button>
+    <p id="status">📤 Prêt à uploader des images…</p>
+  </div>
 
-  status.innerHTML = "⏳ Début upload test…";
+  <h3>Mes projets existants :</h3>
+  <div id="projects-container" style="display:flex;gap:10px;flex-wrap:wrap;"></div>
 
-  try {
-    // On crée un petit fichier test si tu veux forcer un test rapide
-    const testFile = new File(["Test"], "test.txt", { type: "text/plain" });
-    const uploadFile = file.size < 100000 ? file : testFile; // <100Ko = ton fichier sinon petit test
-
-    const testRef = ref(storage, "debug/test_" + Date.now() + ".txt");
-    await uploadBytes(testRef, uploadFile);
-    const url = await getDownloadURL(testRef);
-
-    status.innerHTML = `✅ Upload réussi !<br>URL: <a href="${url}" target="_blank">${url}</a>`;
-    alert("✅ Upload OK !");
-  } catch (err) {
-    status.innerHTML = `❌ Erreur upload : ${err.message}`;
-    console.error(err);
-    alert("❌ Erreur upload : " + err.message);
-  }
-};
-</script>
-
+  <script type="module" src="./app-owner.js"></script>
 </body>
 </html>

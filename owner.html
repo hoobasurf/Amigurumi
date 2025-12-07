@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Gestion Amigurumi</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css">
 </head>
 <body class="owner-body">
 
@@ -12,10 +12,10 @@
 
   <div class="form-container">
     <label>Nom de la peluche :</label>
-    <input id="name" type="text" placeholder="ex : Princesse Lapinou" />
+    <input id="name" type="text" placeholder="ex : Princesse Lapinou">
 
     <label>Photos :</label>
-    <input id="photo" type="file" accept="image/*" multiple />
+    <input id="photo" type="file" accept="image/*" multiple>
 
     <label>Rendre publique :</label>
     <select id="public">
@@ -23,36 +23,13 @@
       <option value="false">Non (privé)</option>
     </select>
 
-    <button id="save">Enregistrer la création</button>
+    <button id="save">Enregistrer</button>
     <p id="status">📤 Prêt à uploader des images…</p>
   </div>
 
   <h3>Mes projets existants :</h3>
   <div id="projects-container" style="display:flex;gap:10px;flex-wrap:wrap;"></div>
 
-  <!-- Import app-owner.js -->
   <script type="module" src="./app-owner.js"></script>
-
-  <!-- Test upload rapide (optionnel) -->
-  <script type="module">
-    import { storage } from "./firebase.js";
-    import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-storage.js";
-
-    async function testUpload() {
-      try {
-        const testFile = new File(["test"], "test.txt", { type: "text/plain" });
-        const testRef = ref(storage, "images/test.txt");
-        await uploadBytes(testRef, testFile);
-        const url = await getDownloadURL(testRef);
-        console.log("✅ Upload test OK :", url);
-      } catch (err) {
-        console.error("❌ Erreur upload test :", err);
-      }
-    }
-
-    // Décommenter pour tester l'upload directement
-    // testUpload();
-  </script>
-
 </body>
 </html>

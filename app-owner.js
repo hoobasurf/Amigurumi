@@ -89,3 +89,21 @@ async function saveCreation() {
     console.error("Firestore error:", err);
   }
 }
+window.testUpload = async function () {
+  const file = photosInput.files[0];
+  if (!file) {
+    alert("Choisis une image");
+    return;
+  }
+
+  console.log("Test upload fichier:", file);
+
+  try {
+    const imageRef = ref(storage, "debug/" + Date.now() + "_" + file.name);
+    await uploadBytes(imageRef, file);
+    alert("UPLOAD OK !");
+  } catch (err) {
+    alert("ERREUR: " + err.message);
+    console.error(err);
+  }
+};

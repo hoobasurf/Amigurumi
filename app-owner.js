@@ -1,10 +1,7 @@
 // app-owner.js
 import { db, storage } from "./firebase.js";
 import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
-import { ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-storage.js";
-
-console.log("app-owner.js chargé !");
-console.log("db:", db, "storage:", storage);
+import { ref, getDownloadURL, uploadBytesResumable } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-storage.js";
 
 const saveBtn = document.getElementById("save");
 const nameInput = document.getElementById("name");
@@ -15,7 +12,7 @@ const projectsContainer = document.getElementById("projects-container");
 
 saveBtn.onclick = saveCreation;
 
-// Affichage miniatures
+// Fonction pour afficher les miniatures
 function displayMiniatures(urls) {
   projectsContainer.innerHTML = "";
   urls.forEach(url => {
@@ -31,34 +28,29 @@ function displayMiniatures(urls) {
   });
 }
 
-// Upload d’un fichier avec suivi progress
-function uploadFile(file) {
-  return new Promise((resolve, reject) => {
-    const imageRef = ref(storage, "images/" + Date.now() + "_" + file.name);
-    const uploadTask = uploadBytesResumable(imageRef, file);
-
-    uploadTask.on('state_changed',
-      snapshot => {
-        const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
-        status.innerHTML = `⏳ Upload ${file.name} : ${progress}%`;
-      },
-      error => {
-        console.error("Upload error:", error);
-        reject(error);
-      },
-      async () => {
-        try {
-          const url = await getDownloadURL(uploadTask.snapshot.ref);
-          resolve(url);
-        } catch (err) {
-          reject(err);
-        }
-      }
-    );
+// Fonction pour convertir image iOS en JPEG (si nécessaire)
+function convertToJPEG(file) {
+  return new Promise((resolve) => {
+    if (file.type === "image/jpeg") {
+      resolve(file);
+      return;
+    }
+    const img = new Image();
+    img.src = URL.createObjectURL(file);
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0);
+      canvas.toBlob((blob) => {
+        const newFile = new File([blob], file.name.replace(/\.[^/.]+$/, ".jpeg"), { type: "image/jpeg" });
+        resolve(newFile);
+      }, "image/jpeg", 0.9);
+    };
   });
 }
 
-// Fonction principale
 async function saveCreation() {
   const name = nameInput.value.trim();
   const files = Array.from(photosInput.files);
@@ -72,38 +64,52 @@ async function saveCreation() {
   status.innerHTML = "📤 Début de l'upload…<br>";
   const uploadedUrls = [];
 
-  for (let file of files) {
+  for (let i = 0; i < files.length; i++) {
+    let file = files[i];
+    status.innerHTML += `⏳ Préparation de l'image ${i + 1} / ${files.length} : ${file.name}<br>`;
+    file = await convertToJPEG(file);
+
+    const imageRef = ref(storage, "images/" + Date.now() + "_" + file.name);
+    const uploadTask = uploadBytesResumable(imageRef, file);
+
+    await new Promise((resolve, reject) => {
+      uploadTask.on("state_changed",
+        (snapshot) => {
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          status.innerHTML = `⏳ Upload ${file.name} : ${progress.toFixed(0)}%<br>`;
+        },
+        (error) => {
+          status.innerHTML += `❌ Erreur upload ${file.name} : ${error.message}<br>`;
+          console.error(error);
+          reject(error);
+        },
+        async () => {
+          const url = await getDownloadURL(uploadTask.snapshot.ref);
+          uploadedUrls.push(url);
+          status.innerHTML += `✅ ${file.name} uploadé<br>`;
+          resolve();
+        }
+      );
+    });
+  }
+
+  if (uploadedUrls.length > 0) {
+    status.innerHTML += "📝 Enregistrement dans Firestore…<br>";
     try {
-      const url = await uploadFile(file);
-      uploadedUrls.push(url);
-      status.innerHTML += `✅ Upload réussi : ${file.name}<br>`;
+      await addDoc(collection(db, "creations"), {
+        name,
+        imageUrls: uploadedUrls,
+        mainImage: uploadedUrls[0],
+        public: isPublic,
+        createdAt: serverTimestamp()
+      });
+      status.innerHTML += "🎉 Création ajoutée avec succès !";
+      nameInput.value = "";
+      photosInput.value = "";
+      displayMiniatures(uploadedUrls);
     } catch (err) {
-      status.innerHTML += `❌ Erreur upload ${file.name} : ${err.message}<br>`;
+      status.innerHTML += `❌ Erreur Firestore : ${err.message}`;
       console.error(err);
     }
-  }
-
-  if (uploadedUrls.length === 0) {
-    status.innerHTML += "❌ Aucun fichier n'a pu être uploadé.";
-    return;
-  }
-
-  // Enregistrement Firestore
-  status.innerHTML += "📝 Enregistrement dans Firestore…<br>";
-  try {
-    await addDoc(collection(db, "creations"), {
-      name,
-      imageUrls: uploadedUrls,
-      mainImage: uploadedUrls[0],
-      public: isPublic,
-      createdAt: serverTimestamp()
-    });
-    status.innerHTML += "🎉 Création ajoutée avec succès !";
-    nameInput.value = "";
-    photosInput.value = "";
-    displayMiniatures(uploadedUrls);
-  } catch (err) {
-    status.innerHTML += `❌ Erreur Firestore : ${err.message}`;
-    console.error("Firestore error:", err);
   }
 }

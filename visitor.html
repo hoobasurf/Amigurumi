@@ -5,88 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Album Amigurumi</title>
   <link rel="stylesheet" href="style.css" />
-  <style>
-    body { font-family: sans-serif; margin: 0; padding: 0; background: #fce4ec; }
-    h1 { text-align: center; padding: 20px 0; }
-    #projects-container { display: flex; overflow-x: auto; padding: 10px; gap: 10px; }
-    .project-card { position: relative; flex: 0 0 auto; width: 300px; background: rgba(255,255,255,0.8); border-radius: 10px; padding: 10px; }
-    .project-card img { width: 100%; border-radius: 8px; object-fit: cover; }
-    .thumbnails { display: flex; gap: 5px; margin-top: 5px; }
-    .thumbnails img { width: 50px; height: 50px; object-fit: cover; border: 1px solid #f7c6da; border-radius: 5px; }
-    .like-btn { cursor: pointer; font-size: 18px; color: #888; margin-top: 5px; }
-    .like-btn.liked { color: red; }
-    .comment-btn { margin-top: 5px; cursor: pointer; background: #f7c6da; border: none; padding: 5px 10px; border-radius: 5px; }
-  </style>
 </head>
-<body>
+<body class="visitor-body">
 
   <h1>Album Amigurumi 🧸💖</h1>
+  <p id="status">⏳ Chargement des créations…</p>
 
-  <div id="projects-container"></div>
+  <div id="projects-container" style="display:flex; flex-wrap:wrap; gap:10px;"></div>
 
-  <script type="module">
-    import { db } from "./firebase.js";
-    import { collection, getDocs, updateDoc, doc } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
-
-    const container = document.getElementById("projects-container");
-
-    async function loadProjects() {
-      const snapshot = await getDocs(collection(db, "creations"));
-      snapshot.forEach(docSnap => {
-        const data = docSnap.data();
-        const card = document.createElement("div");
-        card.className = "project-card";
-
-        // Image principale
-        const mainImg = document.createElement("img");
-        mainImg.src = data.mainImage || (data.imageUrls && data.imageUrls[0]) || "";
-        card.appendChild(mainImg);
-
-        // Miniatures
-        if (data.imageUrls && data.imageUrls.length > 1) {
-          const thumbDiv = document.createElement("div");
-          thumbDiv.className = "thumbnails";
-          data.imageUrls.forEach(url => {
-            const thumb = document.createElement("img");
-            thumb.src = url;
-            thumbDiv.appendChild(thumb);
-          });
-          card.appendChild(thumbDiv);
-        }
-
-        // Bouton Like
-        const likeBtn = document.createElement("span");
-        likeBtn.className = "like-btn";
-        likeBtn.textContent = "♥ ";
-        let likes = data.likes || 0;
-        const likesCount = document.createElement("span");
-        likesCount.textContent = likes;
-        likeBtn.appendChild(likesCount);
-
-        likeBtn.onclick = async () => {
-          likes++;
-          likesCount.textContent = likes;
-          await updateDoc(doc(db, "creations", docSnap.id), { likes });
-          likeBtn.classList.add("liked");
-        };
-
-        card.appendChild(likeBtn);
-
-        // Bouton Commentaire (fonctionnel côté affichage)
-        const commentBtn = document.createElement("button");
-        commentBtn.className = "comment-btn";
-        commentBtn.textContent = "Commentaire";
-        commentBtn.onclick = () => {
-          alert("Espace commentaire (pas encore implémenté)");
-        };
-        card.appendChild(commentBtn);
-
-        container.appendChild(card);
-      });
-    }
-
-    loadProjects();
-  </script>
-
+  <script type="module" src="./app-visitor.js"></script>
 </body>
 </html>

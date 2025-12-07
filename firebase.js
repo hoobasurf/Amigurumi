@@ -5,12 +5,12 @@ import { getStorage } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-s
 
 // 🔹 Mets ici tes propres configs Firebase
 const firebaseConfig = {
-  apiKey: "TON_API_KEY",
-  authDomain: "TON_DOMAINE.firebaseapp.com",
-  projectId: "TON_PROJECT_ID",
-  storageBucket: "TON_PROJECT_ID.appspot.com",
-  messagingSenderId: "TON_SENDER_ID",
-  appId: "TON_APP_ID"
+  apiKey: "AIzaSyDbkbhXdZO20XdQpg3GhShFnqBVSpTdJKQ",
+  authDomain: "amigurumi-2e7df.firebaseapp.com",
+  projectId: "amigurumi-2e7df",
+  storageBucket: "amigurumi-2e7df.appspot.com",
+  messagingSenderId: "92443765428",
+  appId: "1:92443765428:web:23e5aab383547b6f8885e1"
 };
 
 const app = initializeApp(firebaseConfig);

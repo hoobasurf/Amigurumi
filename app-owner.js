@@ -1,108 +1,38 @@
-import { db, storage } from "./firebase.js";
-import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
-import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-storage.js";
+window.saveCreation = async function() {
+  const name = document.getElementById("name").value.trim();
+  const files = Array.from(document.getElementById("photo").files);
+  const status = document.getElementById("status");
 
-console.log("app-owner.js chargé !");
-console.log("db:", db, "storage:", storage);
-
-const saveBtn = document.getElementById("save");
-const nameInput = document.getElementById("name");
-const photosInput = document.getElementById("photo");
-const publicSelect = document.getElementById("public");
-const status = document.getElementById("status");
-const projectsContainer = document.getElementById("projects-container");
-
-saveBtn.onclick = saveCreation;
-
-// Fonction pour créer miniatures côté propriétaire
-function displayMiniatures(urls) {
-  projectsContainer.innerHTML = "";
-  urls.forEach(url => {
-    const img = document.createElement("img");
-    img.src = url;
-    img.style.width = "80px";
-    img.style.height = "80px";
-    img.style.objectFit = "cover";
-    img.style.border = "2px solid #f7c6da";
-    img.style.borderRadius = "8px";
-    img.style.margin = "3px";
-    projectsContainer.appendChild(img);
-  });
-}
-
-async function saveCreation() {
-  const name = nameInput.value.trim();
-  const files = Array.from(photosInput.files);
-  const isPublic = publicSelect.value === "true";
-
-  if (!name || !files.length) {
+  if (!name || files.length === 0) {
     status.innerHTML = "⚠️ Remplis le nom et choisis au moins une image.";
     return;
   }
 
-  status.innerHTML = "📤 Début de l'upload…<br>";
+  status.innerHTML = "📤 Début upload…";
+
   const uploadedUrls = [];
-
-  for (let i = 0; i < files.length; i++) {
-    const file = files[i];
-    status.innerHTML += `⏳ Upload de l'image ${i + 1} / ${files.length} : ${file.name}…<br>`;
-    console.log(`Upload fichier: ${file.name}, taille: ${file.size} octets`);
-
+  for (let file of files) {
     try {
       const imageRef = ref(storage, "images/" + Date.now() + "_" + file.name);
       await uploadBytes(imageRef, file);
       const url = await getDownloadURL(imageRef);
-
       uploadedUrls.push(url);
-      status.innerHTML += `✅ Upload réussi : ${file.name}<br>`;
-      console.log("URL récupérée:", url);
+      status.innerHTML += `<br>✅ ${file.name} uploadé`;
     } catch (err) {
-      status.innerHTML += `❌ Erreur upload ${file.name} : ${err.message}<br>`;
-      console.error("Upload error:", err);
+      status.innerHTML += `<br>❌ ${file.name} : ${err.message}`;
+      console.error(err);
     }
   }
 
-  if (!uploadedUrls.length) {
-    status.innerHTML += "❌ Aucun fichier n'a pu être uploadé.";
-    return;
-  }
-
-  status.innerHTML += "📝 Enregistrement dans Firestore…<br>";
-  try {
+  if (uploadedUrls.length > 0) {
+    status.innerHTML += "<br>📝 Enregistrement dans Firestore…";
     await addDoc(collection(db, "creations"), {
       name,
       imageUrls: uploadedUrls,
       mainImage: uploadedUrls[0],
-      public: isPublic,
+      public: true,
       createdAt: serverTimestamp()
     });
-
-    status.innerHTML += "🎉 Création ajoutée avec succès !";
-    nameInput.value = "";
-    photosInput.value = "";
-    displayMiniatures(uploadedUrls);
-  } catch (err) {
-    status.innerHTML += `❌ Erreur Firestore : ${err.message}`;
-    console.error("Firestore error:", err);
-  }
-}
-
-// ✅ Test upload individuel (optionnel)
-window.testUpload = async function () {
-  const file = photosInput.files[0];
-  if (!file) {
-    alert("Choisis une image");
-    return;
-  }
-
-  console.log("Test upload fichier:", file);
-
-  try {
-    const imageRef = ref(storage, "debug/" + Date.now() + "_" + file.name);
-    await uploadBytes(imageRef, file);
-    alert("UPLOAD OK !");
-  } catch (err) {
-    alert("ERREUR: " + err.message);
-    console.error(err);
+    status.innerHTML += "<br>🎉 Création ajoutée !";
   }
 };

@@ -23,18 +23,14 @@
       <option value="false">Non (privé)</option>
     </select>
 
-    <!-- ✅ Bouton SAVE pour enregistrer la création -->
-    <button id="save">Enregistrer la création</button>
-    
-    <!-- Bouton test upload (optionnel) -->
-    <button onclick="saveCreation()">Enregistrer</button>
-
+    <button id="saveCreationBtn">Enregistrer création</button>
+    <button id="saveBtn">Enregistrer</button>
     <p id="status">📤 Prêt à uploader des images…</p>
   </div>
 
   <h3>Mes projets existants :</h3>
   <div id="projects-container" style="display:flex;gap:10px;flex-wrap:wrap;"></div>
 
-  <script type="module" src="/app-owner.js" defer></script>
+  <script type="module" src="./app-owner.js" defer></script>
 </body>
 </html>

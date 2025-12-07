@@ -1,29 +1,20 @@
-// Imports Firebase
 import { db, storage } from "./firebase.js";
 import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-storage.js";
 
 console.log("app-owner.js chargé !");
-console.log("db:", db, "storage:", storage);
+console.log("db:", db);
+console.log("storage:", storage);
 
-// Récupération éléments DOM
-const saveCreationBtn = document.getElementById("saveCreationBtn");
-const saveBtn = document.getElementById("saveBtn");
+// Récupération des éléments
+const saveBtn = document.getElementById("saveCreationBtn");
 const nameInput = document.getElementById("name");
 const photosInput = document.getElementById("photo");
 const publicSelect = document.getElementById("public");
 const status = document.getElementById("status");
 const projectsContainer = document.getElementById("projects-container");
 
-// Listener pour bouton création
-saveCreationBtn.onclick = saveCreation;
-
-// Listener bouton simple (action personnalisable)
-saveBtn.onclick = () => {
-  alert("Bouton Enregistrer cliqué ! Tu peux mettre une autre action ici.");
-};
-
-// Fonction pour afficher les miniatures côté owner
+// Fonction affichage miniatures
 function displayMiniatures(urls) {
   projectsContainer.innerHTML = "";
   urls.forEach(url => {
@@ -39,8 +30,8 @@ function displayMiniatures(urls) {
   });
 }
 
-// Fonction principale pour enregistrer une création
-async function saveCreation() {
+// Fonction principale saveCreation
+window.saveCreation = async function () {
   const name = nameInput.value.trim();
   const files = Array.from(photosInput.files);
   const isPublic = publicSelect.value === "true";
@@ -50,50 +41,59 @@ async function saveCreation() {
     return;
   }
 
-  status.innerHTML = "📤 Début de l'upload…";
+  status.innerHTML = "📤 Début upload…<br>";
+  console.log("Début upload fichiers :", files);
+
   const uploadedUrls = [];
 
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
-    status.innerHTML += `<br>⏳ Upload de l'image ${i + 1}/${files.length} : ${file.name}…`;
+    status.innerHTML += `⏳ Upload image ${i + 1} / ${files.length} : ${file.name}…<br>`;
     console.log(`Upload fichier: ${file.name}, taille: ${file.size} octets`);
 
     try {
       const imageRef = ref(storage, "images/" + Date.now() + "_" + file.name);
-      await uploadBytes(imageRef, file);
+      const uploadResult = await uploadBytes(imageRef, file);
+      console.log("Upload terminé:", uploadResult);
+
       const url = await getDownloadURL(imageRef);
+      console.log("URL récupérée:", url);
+
       uploadedUrls.push(url);
-      status.innerHTML += `<br>✅ Upload réussi : ${file.name}`;
+      status.innerHTML += `✅ Upload réussi : ${file.name}<br>`;
     } catch (err) {
-      status.innerHTML += `<br>❌ Erreur upload ${file.name} : ${err.message}`;
+      status.innerHTML += `❌ Erreur upload ${file.name} : ${err.message}<br>`;
       console.error("Upload error:", err);
     }
   }
 
-  if (uploadedUrls.length === 0) {
-    status.innerHTML += "<br>❌ Aucun fichier n'a pu être uploadé.";
+  if (!uploadedUrls.length) {
+    status.innerHTML += "❌ Aucun fichier n'a pu être uploadé.";
     return;
   }
 
-  status.innerHTML += "<br>📝 Enregistrement dans Firestore…";
+  status.innerHTML += "📝 Enregistrement dans Firestore…<br>";
 
   try {
-    await addDoc(collection(db, "creations"), {
+    const docRef = await addDoc(collection(db, "creations"), {
       name,
       imageUrls: uploadedUrls,
       mainImage: uploadedUrls[0], // première image = principale
       public: isPublic,
       createdAt: serverTimestamp()
     });
-    status.innerHTML += "<br>🎉 Création ajoutée avec succès !";
+    status.innerHTML += "🎉 Création ajoutée avec succès !";
+    console.log("Document Firestore ajouté:", docRef.id);
 
-    // Reset champs
+    // Reset form
     nameInput.value = "";
     photosInput.value = "";
     displayMiniatures(uploadedUrls);
-
   } catch (err) {
-    status.innerHTML += `<br>❌ Erreur Firestore : ${err.message}`;
+    status.innerHTML += `❌ Erreur Firestore : ${err.message}`;
     console.error("Firestore error:", err);
   }
-}
+};
+
+// Associer le bouton
+saveBtn.onclick = window.saveCreation;

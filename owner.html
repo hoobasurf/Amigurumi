@@ -15,9 +15,10 @@
     <label>Nom de la peluche :</label>
     <input id="name" type="text" placeholder="ex : Princesse Lapinou" />
 
-    <label>Photo :</label>
+    <label>Photos (plusieurs) :</label>
     <input id="photo" type="file" accept="image/*" multiple />
-    <div id="preview-container" style="display:flex;gap:8px;margin-top:8px;"></div>
+
+    <div id="preview-images" style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;"></div>
 
     <label>Rendre publique pour famille/amies :</label>
     <select id="public">
@@ -27,8 +28,11 @@
 
     <button id="save">Enregistrer</button>
 
-    <p id="status"></p>
+    <p id="status">📤 Upload des images…</p>
   </div>
+
+  <h2>Mes projets existants :</h2>
+  <div id="projects-container" style="display:flex;gap:10px;flex-wrap:wrap;"></div>
 
   <script type="module" src="app-owner.js"></script>
 </body>

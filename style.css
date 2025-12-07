@@ -1,165 +1,124 @@
 body {
+  font-family: Arial;
+  background: #fdf6ff;
   margin: 0;
-  background: #ffeef8;
-  font-family: "Comic Sans MS", cursive;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.album-body {
-  padding-top: 20px;
-}
-
-.album-container {
-  display: flex;
-  gap: 20px;
-  padding: 20px;
-}
-
-.album-page {
-  width: 250px;
-  height: 350px;
-  background: #fffafc;
-  border: 4px solid #f7c6da;
-  border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-  padding: 10px;
+  padding: 0;
   text-align: center;
 }
 
-.album-img {
-  width: 90%;
-  height: 250px;
-  object-fit: cover;
-  border-radius: 8px;
-  border: 3px solid #f7c6da;
-  background: #ffe9f3;
+.title {
+  font-size: 28px;
+  margin: 20px 0;
+  color: #d57dc9;
 }
 
-.album-controls button {
-  padding: 12px 20px;
-  font-size: 18px;
-  margin: 10px;
-  border-radius: 12px;
-  background: #ffb8d6;
-  border: none;
-  cursor: pointer;
-  box-shadow: 0 3px 6px rgba(0,0,0,0.2);
-}
-
-.album-controls button:hover {
-  background: #ffa5ce;
-}
-
-/* --- gallery horizontal + hide prev/next (minimal, non-intrusif) --- */
-.album-container {
-  /* permet de scroller horizontalement si nécessaire,
-     visuellement ça ne change pas si fenêtre large */
+/* Galerie horizontale */
+.gallery-scroll {
+  display: flex;
   overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  -webkit-overflow-scrolling: touch;
+  gap: 14px;
+  padding: 20px;
 }
 
-.album-container .album-page {
-  flex: 0 0 auto; /* empêche le stretch, chaque page garde sa taille */
-  scroll-snap-align: start;
+.gallery-img {
+  height: 160px;
+  border-radius: 14px;
+  box-shadow: 0 3px 7px #0002;
+  cursor: pointer;
+  object-fit: cover;
 }
 
-/* masquer les boutons "Page précédente / suivante" sans les supprimer */
-#prev, #next {
-  display: none !important;
-  visibility: hidden !important;
-  height: 0 !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  border: none !important;
-  box-shadow: none !important;
-}
-
-/* enlève l'affichage de la scrollbar si tu veux propre */
-.album-container::-webkit-scrollbar { height: 8px; display: none; }
-
-/* --- Modal zoom + commentaires (pastel, léger flou) --- */
-#modal {
+/* Modal zoom */
+.modal {
   position: fixed;
-  inset: 0;
-  display: none;              /* caché par défaut */
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: #0004;
+  backdrop-filter: blur(4px);
+  display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1200;
-  pointer-events: none;
 }
-#modal[aria-hidden="false"] {
-  display: flex;
-  pointer-events: auto;
-}
-#modal-overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(255,255,255,0.25);
-  backdrop-filter: blur(8px);
-}
-#modal-box {
+
+.hidden { display: none; }
+
+.modal-content {
   position: relative;
-  max-width: 92%;
-  max-height: 88%;
-  border-radius: 14px;
-  background: linear-gradient(180deg,#fffafc,#fff6fb);
-  box-shadow: 0 10px 40px rgba(0,0,0,0.18);
-  padding: 14px;
-  z-index: 1210;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  align-items: center;
 }
 
-/* l'image zoomée */
-#modal-img {
-  max-width: 100%;
-  max-height: 60vh;
-  border-radius: 10px;
-  border: 3px solid #f7c6da;
-  background: #ffe9f3;
-  object-fit: contain;
-}
-
-/* bouton discret commentaires */
-#modal-comment-btn {
-  margin-top: 8px;
-  padding: 8px 12px;
+.modal-image {
+  width: 85%;
+  max-width: 450px;
   border-radius: 12px;
-  border: none;
-  background: #ffffffcc;
-  backdrop-filter: blur(4px);
-  cursor: pointer;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
 }
 
-/* zone commentaires (modal secondaire incorporée dans le même modal) */
-#comment-panel {
-  width: 100%;
-  max-width: 420px;
-  background: #fbf7ff;
-  border-radius: 12px;
-  padding: 12px;
-  box-shadow: 0 6px 18px rgba(0,0,0,0.08);
-  display: none;
-  flex-direction: column;
-  gap: 8px;
-}
-#comment-panel.show { display: flex; }
-
-#comment-panel input, #comment-panel textarea {
-  width: 100%;
-  padding: 10px;
-  border-radius: 10px;
+.close-btn {
+  position: absolute;
+  right: -5px; top: -5px;
   border: none;
   background: #fff;
-  font-size: 0.95rem;
+  border-radius: 50%;
+  width: 32px; height: 32px;
+  font-size: 18px;
+  box-shadow: 0 3px 7px #0003;
 }
 
-#comment-panel .emoji-row { display:flex; gap:8px; font-size:1.2rem; user-select:none; cursor:pointer; }
+.comment-btn {
+  position: absolute;
+  left: 10px; bottom: -15px;
+  padding: 6px 12px;
+  background: #ffd4f3;
+  border: none;
+  border-radius: 20px;
+  box-shadow: 0 3px 7px #0003;
+}
 
-.comment { padding:8px 10px; border-radius:8px; background:#fffafc; box-shadow: 0 2px 6px rgba(0,0,0,0.04); }
+/* Modal commentaire */
+.comment-box {
+  background: #fff;
+  padding: 20px;
+  border-radius: 14px;
+  width: 80%;
+  max-width: 340px;
+  margin: auto;
+}
+
+input, textarea {
+  width: 100%;
+  margin: 8px 0;
+  padding: 8px;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+}
+
+.validate-btn {
+  padding: 10px 16px;
+  background: #ffc2ef;
+  border: none;
+  border-radius: 12px;
+  margin-top: 10px;
+}
+
+/* Owner */
+.owner-box {
+  width: 90%;
+  max-width: 400px;
+  margin: auto;
+}
+
+.owner-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #fff;
+  padding: 10px;
+  margin: 8px auto;
+  width: 90%;
+  border-radius: 12px;
+  box-shadow: 0 3px 7px #0002;
+}
+
+.owner-thumb {
+  height: 60px;
+  border-radius: 10px;
+}

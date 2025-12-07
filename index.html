@@ -9,16 +9,9 @@
 
 <body class="album-body">
 
-  <div class="album-container" id="album-container">
-    <!-- Les projets seront injectés ici -->
-  </div>
+  <div class="album-container" id="album-container"></div>
 
-  <div class="album-controls">
-    <button id="prev">⬅️ Page précédente</button>
-    <button id="next">Page suivante ➡️</button>
-  </div>
-
-  <!-- Modal zoom + miniatures + commentaire + like -->
+  <!-- ZONE MODAL (zoom + commentaires + like) -->
   <div id="modal" aria-hidden="true">
     <div id="modal-overlay" aria-hidden="true"></div>
 
@@ -30,12 +23,10 @@
 
       <img id="modal-img" src="" alt="Zoom image" />
 
-      <div id="mini-images" style="display:flex;gap:6px;margin-top:8px;overflow-x:auto;"></div>
+      <div id="modal-thumbnails" style="display:flex;gap:6px;overflow-x:auto;"></div>
 
-      <div style="display:flex;justify-content:center;gap:12px;margin-top:8px;">
-        <button id="modal-comment-btn" type="button">Commentaires</button>
-        <button id="modal-like-btn" type="button">♡ <span id="like-count">0</span></button>
-      </div>
+      <button id="modal-comment-btn" type="button">Commentaires</button>
+      <button id="modal-like-btn" type="button">❤️ <span id="like-count">0</span></button>
 
       <!-- panneau commentaires -->
       <div id="comment-panel" aria-hidden="true">
@@ -43,16 +34,12 @@
           <strong>Commentaires</strong>
           <button id="comment-close" style="border:none;background:transparent;cursor:pointer">✕</button>
         </div>
-
         <div id="comments-list" style="max-height:200px;overflow:auto;"></div>
-
         <form id="comment-form" style="display:flex;flex-direction:column;gap:8px;">
           <input id="comment-name" placeholder="Votre prénom (optionnel)" />
           <textarea id="comment-text" rows="3" placeholder="Écrire un commentaire..."></textarea>
-          <div class="emoji-row" id="emoji-row">😊 😍 😂 🤩 😭 😉</div>
-          <div style="display:flex;gap:8px;justify-content:flex-end;">
-            <button id="comment-cancel" type="button">Annuler</button>
-            <button id="comment-send" type="submit">Valider</button>
+          <div style="display:flex;gap:8px;justify-content:center;">
+            <button type="submit">Valider</button>
           </div>
         </form>
       </div>

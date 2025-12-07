@@ -11,39 +11,43 @@ import {
   getDownloadURL
 } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-storage.js";
 
-
 document.getElementById("save").onclick = saveCreation;
 
 async function saveCreation() {
   const name = document.getElementById("name").value.trim();
-  const file = document.getElementById("photo").files[0];
+  const files = Array.from(document.getElementById("photo").files);
   const isPublic = document.getElementById("public").value === "true";
   const status = document.getElementById("status");
 
-  if (!name || !file) {
-    status.textContent = "⚠️ Remplis le nom et choisis une image.";
+  if (!name || files.length === 0) {
+    status.textContent = "⚠️ Remplis le nom et choisis au moins une image.";
     return;
   }
 
-  status.textContent = "📤 Upload de l’image…";
+  status.textContent = "📤 Upload des images…";
 
-  // 1) Upload image dans Storage
-  const imageRef = ref(storage, "images/" + Date.now() + "_" + file.name);
-  await uploadBytes(imageRef, file);
-
-  const imageUrl = await getDownloadURL(imageRef);
+  // Upload multiple images
+  const imageUrls = [];
+  for (let file of files) {
+    const imageRef = ref(storage, `images/${Date.now()}_${file.name}`);
+    await uploadBytes(imageRef, file);
+    const url = await getDownloadURL(imageRef);
+    imageUrls.push(url);
+  }
 
   status.textContent = "📝 Enregistrement dans la base…";
 
-  // 2) Enregistrer dans Firestore
-  await addDoc(collection(db, "creations"), {
+  // Enregistrer projet avec images dans Firestore
+  await addDoc(collection(db, "projects"), {
     name,
-    imageUrl,
+    images: imageUrls,
     public: isPublic,
+    likes: 0,
+    comments: [],
     createdAt: serverTimestamp()
   });
 
-  status.textContent = "🎉 Création ajoutée avec succès !";
+  status.textContent = "🎉 Projet ajouté avec succès !";
   document.getElementById("name").value = "";
   document.getElementById("photo").value = "";
 }

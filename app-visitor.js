@@ -1,4 +1,16 @@
 import { db } from "./firebase.js";
+import { collection, getDocs } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+
+async function loadCreations() {
+  const snapshot = await getDocs(collection(db, "creations"));
+  snapshot.forEach(doc => {
+    console.log("Doc Firestore:", doc.id, doc.data());
+  });
+}
+
+loadCreations();
+
+import { db } from "./firebase.js";
 import { collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 
 const projectsContainer = document.getElementById("projects-container");

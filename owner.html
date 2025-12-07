@@ -3,44 +3,122 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Test Upload Firebase</title>
+  <title>Gestion Amigurumi</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
-<body>
-  <h1>Test Upload Firebase Storage</h1>
-  <p id="status">📤 Prêt…</p>
+<body class="owner-body">
+
+  <h1>Ajouter une création Amigurumi 🧸💖</h1>
+
+  <div class="form-container">
+    <label>Nom de la peluche :</label>
+    <input id="name" type="text" placeholder="ex : Princesse Lapinou" />
+
+    <label>Photos :</label>
+    <input id="photo" type="file" accept="image/*" multiple />
+
+    <label>Rendre publique :</label>
+    <select id="public">
+      <option value="true">Oui (visible dans l'album)</option>
+      <option value="false">Non (privé)</option>
+    </select>
+
+    <button id="save">Enregistrer la création</button>
+    <p id="status">📤 Prêt à uploader des images…</p>
+  </div>
+
+  <h3>Mes projets existants :</h3>
+  <div id="projects-container" style="display:flex;gap:10px;flex-wrap:wrap;"></div>
 
   <script type="module">
-    import { storage } from "./firebase.js";
-    import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-storage.js";
+    import { db } from "./firebase.js";
 
+    const saveBtn = document.getElementById("save");
+    const nameInput = document.getElementById("name");
+    const photosInput = document.getElementById("photo");
     const status = document.getElementById("status");
+    const projectsContainer = document.getElementById("projects-container");
 
-    async function testTinyUpload() {
-      status.innerHTML = "⏳ Début upload test…";
+    saveBtn.onclick = async function saveCreation() {
+      const name = nameInput.value.trim();
+      const files = Array.from(photosInput.files);
+      const isPublic = document.getElementById("public").value === "true";
 
-      try {
-        // Blob ultra-simple
-        const blob = new Blob(["test"], { type: "text/plain" });
-
-        // Référence Storage
-        const fileRef = ref(storage, "test/testfile.txt");
-
-        // Upload
-        await uploadBytes(fileRef, blob);
-
-        // Récup URL
-        const url = await getDownloadURL(fileRef);
-        status.innerHTML = "✅ Upload OK !<br>URL : " + url;
-        console.log("Upload OK:", url);
-
-      } catch (err) {
-        status.innerHTML = "❌ Erreur upload : " + err.message;
-        console.error("Erreur upload :", err);
+      if (!name || files.length === 0) {
+        status.innerHTML = "⚠️ Remplis le nom et choisis au moins une image.";
+        return;
       }
-    }
 
-    // Lancer le test immédiatement
-    testTinyUpload();
+      status.innerHTML = "📤 Début upload via Netlify Function…";
+      const uploadedUrls = [];
+
+      for (let file of files) {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+
+        await new Promise((resolve, reject) => {
+          reader.onload = async () => {
+            try {
+              const base64Data = reader.result.split(",")[1]; // enlève data:image/…
+              const res = await fetch("/.netlify/functions/upload", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name: file.name, fileBase64: base64Data })
+              });
+              const data = await res.json();
+              if (data.url) {
+                uploadedUrls.push(data.url);
+                status.innerHTML += `<br>✅ ${file.name} uploadé`;
+              } else {
+                status.innerHTML += `<br>❌ ${file.name} : Erreur function`;
+              }
+              resolve();
+            } catch (err) {
+              status.innerHTML += `<br>❌ ${file.name} : ${err.message}`;
+              reject(err);
+            }
+          };
+          reader.onerror = err => reject(err);
+        });
+      }
+
+      if (uploadedUrls.length > 0) {
+        status.innerHTML += "<br>📝 Enregistrement dans Firestore…";
+        const { collection, addDoc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js");
+
+        try {
+          await addDoc(collection(db, "creations"), {
+            name,
+            imageUrls: uploadedUrls,
+            mainImage: uploadedUrls[0],
+            public: isPublic,
+            createdAt: serverTimestamp()
+          });
+          status.innerHTML += "<br>🎉 Création ajoutée !";
+          nameInput.value = "";
+          photosInput.value = "";
+          displayMiniatures(uploadedUrls);
+        } catch (err) {
+          status.innerHTML += `<br>❌ Erreur Firestore : ${err.message}`;
+          console.error(err);
+        }
+      }
+    };
+
+    function displayMiniatures(urls) {
+      projectsContainer.innerHTML = "";
+      urls.forEach(url => {
+        const img = document.createElement("img");
+        img.src = url;
+        img.style.width = "80px";
+        img.style.height = "80px";
+        img.style.objectFit = "cover";
+        img.style.border = "2px solid #f7c6da";
+        img.style.borderRadius = "8px";
+        img.style.margin = "3px";
+        projectsContainer.appendChild(img);
+      });
+    }
   </script>
 </body>
 </html>

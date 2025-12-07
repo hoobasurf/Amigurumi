@@ -1,60 +1,88 @@
 import { db } from "./firebase.js";
+import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 
-window.saveCreation = async function() {
-  const name = document.getElementById("name").value.trim();
-  const files = Array.from(document.getElementById("photo").files);
-  const status = document.getElementById("status");
+const saveBtn = document.getElementById("save");
+const nameInput = document.getElementById("name");
+const photoInput = document.getElementById("photo");
+const publicSelect = document.getElementById("public");
+const status = document.getElementById("status");
+const projectsContainer = document.getElementById("projects-container");
+
+saveBtn.onclick = saveCreation;
+
+// Affichage des miniatures
+function displayMiniatures(urls) {
+  projectsContainer.innerHTML = "";
+  urls.forEach(url => {
+    const img = document.createElement("img");
+    img.src = url;
+    img.style.width = "80px";
+    img.style.height = "80px";
+    img.style.objectFit = "cover";
+    img.style.border = "2px solid #f7c6da";
+    img.style.borderRadius = "8px";
+    img.style.margin = "3px";
+    projectsContainer.appendChild(img);
+  });
+}
+
+async function saveCreation() {
+  const name = nameInput.value.trim();
+  const files = Array.from(photoInput.files);
+  const isPublic = publicSelect.value === "true";
 
   if (!name || files.length === 0) {
     status.innerHTML = "⚠️ Remplis le nom et choisis au moins une image.";
     return;
   }
 
-  status.innerHTML = "📤 Début upload via Netlify Function…";
+  status.innerHTML = "📤 Début upload…";
   const uploadedUrls = [];
 
-  for (let file of files) {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    status.innerHTML += `<br>⏳ Upload de ${file.name}…`;
 
-    await new Promise((resolve, reject) => {
-      reader.onload = async () => {
-        try {
-          const base64Data = reader.result.split(",")[1]; // enlève data:image/...
-          const res = await fetch("/.netlify/functions/upload", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name: file.name, fileBase64: base64Data })
-          });
-          const data = await res.json();
-          if (data.url) {
-            uploadedUrls.push(data.url);
-            status.innerHTML += `<br>✅ ${file.name} uploadé`;
-          } else {
-            status.innerHTML += `<br>❌ ${file.name} : Erreur function`;
-          }
-          resolve();
-        } catch (err) {
-          status.innerHTML += `<br>❌ ${file.name} : ${err.message}`;
-          reject(err);
-        }
-      };
-      reader.onerror = err => reject(err);
-    });
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/.netlify/functions/upload", {
+        method: "POST",
+        body: formData
+      });
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || "Erreur inconnue");
+
+      uploadedUrls.push(data.url);
+      status.innerHTML += ` ✅ ${file.name} uploadé`;
+    } catch (err) {
+      status.innerHTML += `<br>❌ ${file.name} : ${err.message}`;
+      console.error(err);
+    }
   }
 
-  if (uploadedUrls.length > 0) {
-    status.innerHTML += "<br>📝 Enregistrement dans Firestore…";
-    const { collection, addDoc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js");
+  if (uploadedUrls.length === 0) {
+    status.innerHTML += "<br>❌ Aucun fichier n'a pu être uploadé.";
+    return;
+  }
 
+  status.innerHTML += "<br>📝 Enregistrement dans Firestore…";
+  try {
     await addDoc(collection(db, "creations"), {
       name,
       imageUrls: uploadedUrls,
       mainImage: uploadedUrls[0],
-      public: true,
+      public: isPublic,
       createdAt: serverTimestamp()
     });
-
     status.innerHTML += "<br>🎉 Création ajoutée !";
+    displayMiniatures(uploadedUrls);
+    nameInput.value = "";
+    photoInput.value = "";
+  } catch (err) {
+    status.innerHTML += `<br>❌ Erreur Firestore : ${err.message}`;
+    console.error(err);
   }
-};
+}

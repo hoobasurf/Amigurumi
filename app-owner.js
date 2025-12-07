@@ -65,7 +65,7 @@ document.getElementById("save").onclick = async () => {
     previewContainer.innerHTML = "";
     selectedFiles = [];
 
-    // Rafraîchir la liste (facultatif)
+    // Affiche les projets existants en bas
     await displayExistingProjects();
   } catch (err) {
     console.error(err);
@@ -75,9 +75,16 @@ document.getElementById("save").onclick = async () => {
 
 // Afficher projets déjà créés pour le propriétaire
 async function displayExistingProjects() {
-  const container = document.createElement("div");
-  container.style.marginTop = "20px";
-  container.innerHTML = "<h3>Mes projets existants :</h3>";
+  let existingContainer = document.getElementById("existing-projects");
+  if (!existingContainer) {
+    existingContainer = document.createElement("div");
+    existingContainer.id = "existing-projects";
+    existingContainer.style.marginTop = "20px";
+    document.body.appendChild(existingContainer);
+  }
+
+  existingContainer.innerHTML = "<h3>Mes projets existants :</h3>";
+
   const snapshot = await getDocs(collection(db, "creations"));
   snapshot.forEach(doc => {
     const data = doc.data();
@@ -99,11 +106,9 @@ async function displayExistingProjects() {
     span.textContent = data.name;
     div.appendChild(span);
 
-    container.appendChild(div);
+    existingContainer.appendChild(div);
   });
-
-  document.body.appendChild(container);
 }
 
-// Au chargement, afficher projets existants
+// Afficher les projets existants au chargement
 displayExistingProjects();

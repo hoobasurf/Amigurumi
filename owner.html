@@ -17,19 +17,19 @@
     <label>Photos :</label>
     <input id="photo" type="file" accept="image/*" multiple />
 
-    <label>Rendre publique pour famille/amies :</label>
+    <label>Rendre publique :</label>
     <select id="public">
       <option value="true">Oui (visible dans l'album)</option>
       <option value="false">Non (privé)</option>
     </select>
 
-    <button id="saveCreationBtn">Enregistrer création</button>
+    <button id="save">Enregistrer</button>
     <p id="status">📤 Prêt à uploader des images…</p>
   </div>
 
   <h3>Mes projets existants :</h3>
   <div id="projects-container" style="display:flex;gap:10px;flex-wrap:wrap;"></div>
 
-  <script type="module" src="./app-owner.js" defer></script>
+  <script type="module" src="./app-owner.js"></script>
 </body>
 </html>

@@ -1,11 +1,16 @@
+alert("Test A : début du fichier");
 
 import { db, storage } from "./firebase.js";
 import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-storage.js";
 
+alert("Test B : après imports");
+
 console.log("app-owner.js chargé !");
 console.log("db:", db);
 console.log("storage:", storage);
+
+alert("Test C : avant saveBtn");
 
 const saveBtn = document.getElementById("save");
 const nameInput = document.getElementById("name");
@@ -107,3 +112,5 @@ window.testUpload = async function () {
     console.error(err);
   }
 };
+
+alert("Test Z : fin du fichier chargée");

@@ -1,114 +1,117 @@
 import { db, storage } from "./firebase.js";
-import { collection, addDoc, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
-import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-storage.js";
+import {
+  collection,
+  addDoc,
+  serverTimestamp,
+  getDocs,
+  query,
+  orderBy
+} from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+import {
+  ref,
+  uploadBytes,
+  getDownloadURL
+} from "https://www.gstatic.com/firebasejs/12.6.0/firebase-storage.js";
 
-const photoInput = document.getElementById("photo");
-const previewContainer = document.getElementById("preview-container");
-const status = document.getElementById("status");
+// Elements
+const saveBtn = document.getElementById("save");
 const nameInput = document.getElementById("name");
+const photoInput = document.getElementById("photo");
+const publicSelect = document.getElementById("public");
+const status = document.getElementById("status");
+const previewContainer = document.getElementById("preview-container");
+const existingProjectsDiv = document.getElementById("existing-projects");
 
-let selectedFiles = [];
-
+// Prévisualisation des images sélectionnées
 photoInput.addEventListener("change", () => {
   previewContainer.innerHTML = "";
-  selectedFiles = Array.from(photoInput.files);
-
-  selectedFiles.forEach(file => {
-    const reader = new FileReader();
-    reader.onload = e => {
-      const img = document.createElement("img");
-      img.src = e.target.result;
-      img.style.width = "60px";
-      img.style.height = "60px";
-      img.style.objectFit = "cover";
-      img.style.borderRadius = "8px";
-      img.style.border = "2px solid #f7c6da";
-      previewContainer.appendChild(img);
-    };
-    reader.readAsDataURL(file);
+  const files = Array.from(photoInput.files);
+  files.forEach(file => {
+    const img = document.createElement("img");
+    img.src = URL.createObjectURL(file);
+    img.style.width = "60px";
+    img.style.height = "60px";
+    img.style.objectFit = "cover";
+    img.style.borderRadius = "6px";
+    previewContainer.appendChild(img);
   });
 });
 
-document.getElementById("save").onclick = async () => {
-  const name = nameInput.value.trim();
-  const isPublic = document.getElementById("public").value === "true";
+// Fonction pour afficher tous les projets existants
+async function loadExistingProjects() {
+  existingProjectsDiv.innerHTML = "";
+  const q = query(collection(db, "creations"), orderBy("createdAt", "desc"));
+  const snapshot = await getDocs(q);
 
-  if (!name || selectedFiles.length === 0) {
+  snapshot.forEach(doc => {
+    const data = doc.data();
+    const projectDiv = document.createElement("div");
+    projectDiv.style.display = "flex";
+    projectDiv.style.flexDirection = "column";
+    projectDiv.style.alignItems = "center";
+    projectDiv.style.gap = "4px";
+
+    // miniature principale = première image
+    const img = document.createElement("img");
+    img.src = Array.isArray(data.imageUrl) ? data.imageUrl[0] : data.imageUrl;
+    img.style.width = "80px";
+    img.style.height = "80px";
+    img.style.objectFit = "cover";
+    img.style.borderRadius = "6px";
+
+    const title = document.createElement("div");
+    title.textContent = data.name;
+    title.style.fontSize = "0.85rem";
+    title.style.textAlign = "center";
+
+    projectDiv.appendChild(img);
+    projectDiv.appendChild(title);
+
+    existingProjectsDiv.appendChild(projectDiv);
+  });
+}
+
+// Initial load
+loadExistingProjects();
+
+// Enregistrer un nouveau projet
+saveBtn.onclick = async () => {
+  const name = nameInput.value.trim();
+  const files = Array.from(photoInput.files);
+  const isPublic = publicSelect.value === "true";
+
+  if (!name || files.length === 0) {
     status.textContent = "⚠️ Remplis le nom et choisis au moins une image.";
     return;
   }
 
   status.textContent = "📤 Upload des images…";
 
-  try {
-    const uploadedUrls = [];
-    for (let i = 0; i < selectedFiles.length; i++) {
-      const file = selectedFiles[i];
-      const imageRef = ref(storage, "images/" + Date.now() + "_" + file.name);
-      await uploadBytes(imageRef, file);
-      uploadedUrls.push(await getDownloadURL(imageRef));
-    }
-
-    // Enregistrer le projet dans Firestore
-    await addDoc(collection(db, "creations"), {
-      name,
-      mainImage: uploadedUrls[0],
-      images: uploadedUrls,
-      public: isPublic,
-      likes: 0,
-      createdAt: serverTimestamp()
-    });
-
-    status.textContent = "🎉 Projet ajouté avec succès !";
-    nameInput.value = "";
-    photoInput.value = "";
-    previewContainer.innerHTML = "";
-    selectedFiles = [];
-
-    // Affiche les projets existants en bas
-    await displayExistingProjects();
-  } catch (err) {
-    console.error(err);
-    status.textContent = "❌ Erreur lors de l'enregistrement.";
-  }
-};
-
-// Afficher projets déjà créés pour le propriétaire
-async function displayExistingProjects() {
-  let existingContainer = document.getElementById("existing-projects");
-  if (!existingContainer) {
-    existingContainer = document.createElement("div");
-    existingContainer.id = "existing-projects";
-    existingContainer.style.marginTop = "20px";
-    document.body.appendChild(existingContainer);
+  // Upload multiple images
+  const uploadedUrls = [];
+  for (const file of files) {
+    const imageRef = ref(storage, `images/${Date.now()}_${file.name}`);
+    await uploadBytes(imageRef, file);
+    const url = await getDownloadURL(imageRef);
+    uploadedUrls.push(url);
   }
 
-  existingContainer.innerHTML = "<h3>Mes projets existants :</h3>";
+  status.textContent = "📝 Enregistrement du projet…";
 
-  const snapshot = await getDocs(collection(db, "creations"));
-  snapshot.forEach(doc => {
-    const data = doc.data();
-    const div = document.createElement("div");
-    div.style.display = "flex";
-    div.style.alignItems = "center";
-    div.style.gap = "10px";
-    div.style.marginBottom = "10px";
-
-    const img = document.createElement("img");
-    img.src = data.mainImage;
-    img.style.width = "50px";
-    img.style.height = "50px";
-    img.style.objectFit = "cover";
-    img.style.borderRadius = "6px";
-    div.appendChild(img);
-
-    const span = document.createElement("span");
-    span.textContent = data.name;
-    div.appendChild(span);
-
-    existingContainer.appendChild(div);
+  await addDoc(collection(db, "creations"), {
+    name,
+    imageUrl: uploadedUrls, // tableau d'urls
+    public: isPublic,
+    createdAt: serverTimestamp()
   });
-}
 
-// Afficher les projets existants au chargement
-displayExistingProjects();
+  status.textContent = "🎉 Projet ajouté !";
+
+  // Reset
+  nameInput.value = "";
+  photoInput.value = "";
+  previewContainer.innerHTML = "";
+
+  // Rafraîchir la liste des projets existants
+  loadExistingProjects();
+};

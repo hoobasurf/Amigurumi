@@ -1,17 +1,21 @@
 import { db, storage } from "./firebase.js";
-import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+import { collection, addDoc, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-storage.js";
 
 const photoInput = document.getElementById("photo");
 const previewContainer = document.getElementById("preview-container");
+const status = document.getElementById("status");
+const nameInput = document.getElementById("name");
+
+let selectedFiles = [];
 
 photoInput.addEventListener("change", () => {
   previewContainer.innerHTML = "";
-  const files = photoInput.files;
-  for (let i = 0; i < files.length; i++) {
-    const file = files[i];
+  selectedFiles = Array.from(photoInput.files);
+
+  selectedFiles.forEach(file => {
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = e => {
       const img = document.createElement("img");
       img.src = e.target.result;
       img.style.width = "60px";
@@ -22,33 +26,30 @@ photoInput.addEventListener("change", () => {
       previewContainer.appendChild(img);
     };
     reader.readAsDataURL(file);
-  }
+  });
 });
 
 document.getElementById("save").onclick = async () => {
-  const name = document.getElementById("name").value.trim();
-  const files = photoInput.files;
+  const name = nameInput.value.trim();
   const isPublic = document.getElementById("public").value === "true";
-  const status = document.getElementById("status");
 
-  if (!name || !files.length) {
+  if (!name || selectedFiles.length === 0) {
     status.textContent = "⚠️ Remplis le nom et choisis au moins une image.";
     return;
   }
 
   status.textContent = "📤 Upload des images…";
 
-  const uploadedUrls = [];
-  for (let i = 0; i < files.length; i++) {
-    const file = files[i];
-    const imageRef = ref(storage, "images/" + Date.now() + "_" + file.name);
-    await uploadBytes(imageRef, file);
-    uploadedUrls.push(await getDownloadURL(imageRef));
-  }
-
-  status.textContent = "📝 Enregistrement du projet…";
-
   try {
+    const uploadedUrls = [];
+    for (let i = 0; i < selectedFiles.length; i++) {
+      const file = selectedFiles[i];
+      const imageRef = ref(storage, "images/" + Date.now() + "_" + file.name);
+      await uploadBytes(imageRef, file);
+      uploadedUrls.push(await getDownloadURL(imageRef));
+    }
+
+    // Enregistrer le projet dans Firestore
     await addDoc(collection(db, "creations"), {
       name,
       mainImage: uploadedUrls[0],
@@ -59,11 +60,50 @@ document.getElementById("save").onclick = async () => {
     });
 
     status.textContent = "🎉 Projet ajouté avec succès !";
-    document.getElementById("name").value = "";
+    nameInput.value = "";
     photoInput.value = "";
     previewContainer.innerHTML = "";
+    selectedFiles = [];
+
+    // Rafraîchir la liste (facultatif)
+    await displayExistingProjects();
   } catch (err) {
     console.error(err);
     status.textContent = "❌ Erreur lors de l'enregistrement.";
   }
 };
+
+// Afficher projets déjà créés pour le propriétaire
+async function displayExistingProjects() {
+  const container = document.createElement("div");
+  container.style.marginTop = "20px";
+  container.innerHTML = "<h3>Mes projets existants :</h3>";
+  const snapshot = await getDocs(collection(db, "creations"));
+  snapshot.forEach(doc => {
+    const data = doc.data();
+    const div = document.createElement("div");
+    div.style.display = "flex";
+    div.style.alignItems = "center";
+    div.style.gap = "10px";
+    div.style.marginBottom = "10px";
+
+    const img = document.createElement("img");
+    img.src = data.mainImage;
+    img.style.width = "50px";
+    img.style.height = "50px";
+    img.style.objectFit = "cover";
+    img.style.borderRadius = "6px";
+    div.appendChild(img);
+
+    const span = document.createElement("span");
+    span.textContent = data.name;
+    div.appendChild(span);
+
+    container.appendChild(div);
+  });
+
+  document.body.appendChild(container);
+}
+
+// Au chargement, afficher projets existants
+displayExistingProjects();

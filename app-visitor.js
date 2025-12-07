@@ -1,19 +1,15 @@
-/* --- MODE ALBUM VISITEUR (version finale) --- */
+import { db } from "./firebase.js";
+import { collection, getDocs, doc, updateDoc, arrayUnion, increment } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 
-// cacher boutons prev/next
-const prevBtn = document.getElementById("prev");
-const nextBtn = document.getElementById("next");
-if (prevBtn) prevBtn.style.display = "none";
-if (nextBtn) nextBtn.style.display = "none";
-
-/* --- ELEMENTS MODAL --- */
+/* --- ELEMENTS --- */
+const projectsContainer = document.getElementById("projects-container");
 const modal = document.getElementById("modal");
 const modalOverlay = document.getElementById("modal-overlay");
 const modalImg = document.getElementById("modal-img");
 const modalTitle = document.getElementById("modal-title");
 const modalClose = document.getElementById("modal-close");
+const thumbnails = document.getElementById("thumbnails");
 
-/* --- COMMENT PANEL --- */
 const commentBtn = document.getElementById("modal-comment-btn");
 const commentPanel = document.getElementById("comment-panel");
 const commentClose = document.getElementById("comment-close");
@@ -22,122 +18,125 @@ const commentForm = document.getElementById("comment-form");
 const nameInput = document.getElementById("comment-name");
 const textInput = document.getElementById("comment-text");
 const emojiRow = document.getElementById("emoji-row");
-const cancelBtn = document.getElementById("comment-cancel");
+const likeBtn = document.getElementById("like-btn");
 
-let activeImageKey = null;
+let activeProject = null;
+let activeImage = null;
 
-/* --- LOCALSTORAGE COMMENTAIRES --- */
-const LS_KEY = "comments_amigurumi_album";
+/* --- OUVERTURE MODAL PROJET --- */
+async function loadProjects() {
+  const snapshot = await getDocs(collection(db, "projects"));
+  snapshot.forEach(docSnap => {
+    const project = { id: docSnap.id, ...docSnap.data() };
+    if (!project.public) return;
 
-function getAllComments() {
-  try {
-    return JSON.parse(localStorage.getItem(LS_KEY)) || {};
-  } catch {
-    return {};
-  }
-}
-
-function saveAllComments(obj) {
-  localStorage.setItem(LS_KEY, JSON.stringify(obj));
-}
-
-function getCommentsFor(key) {
-  const all = getAllComments();
-  return all[key] || [];
-}
-
-function addCommentFor(key, comment) {
-  const all = getAllComments();
-  if (!all[key]) all[key] = [];
-  all[key].push(comment);
-  saveAllComments(all);
-}
-
-/* --- RENDU COMMENTAIRES --- */
-function renderComments() {
-  commentsList.innerHTML = "";
-  const arr = getCommentsFor(activeImageKey);
-
-  if (!arr.length) {
-    commentsList.innerHTML = `<div class="small-muted">Aucun commentaire</div>`;
-    return;
-  }
-
-  arr.slice().reverse().forEach(c => {
     const div = document.createElement("div");
-    div.className = "comment";
+    div.className = "album-page";
     div.innerHTML = `
-      <div class="who">${c.name}
-        <span class="small-muted"> • ${new Date(c.date).toLocaleString()}</span>
-      </div>
-      <div class="txt">${c.text}</div>
+      <h2>${project.name}</h2>
+      <img src="${project.images[0]}" class="album-img"/>
     `;
-    commentsList.appendChild(div);
+    div.querySelector("img").style.cursor = "pointer";
+    div.addEventListener("click", () => openProjectModal(project));
+    projectsContainer.appendChild(div);
   });
 }
 
-/* --- OUVERTURE ZOOM IMAGE --- */
-const albumImgs = document.querySelectorAll(".album-img");
+/* --- MODAL PROJET --- */
+function openProjectModal(project) {
+  activeProject = project;
+  activeImage = project.images[0];
+  modalImg.src = activeImage;
+  modalTitle.textContent = project.name;
 
-albumImgs.forEach(img => {
-  img.style.cursor = "zoom-in";
-
-  img.addEventListener("click", () => {
-    const src = img.src;
-    const title =
-      img.closest(".album-page")?.querySelector("h2")?.textContent || "Création";
-
-    activeImageKey = src;
-    modalImg.src = src;
-    modalTitle.textContent = title;
-
-    modal.setAttribute("aria-hidden", "false");
-    document.body.style.overflow = "hidden";
+  // miniatures
+  thumbnails.innerHTML = "";
+  project.images.forEach(img => {
+    const thumb = document.createElement("img");
+    thumb.src = img;
+    thumb.style.width = "60px";
+    thumb.style.height = "60px";
+    thumb.style.objectFit = "cover";
+    thumb.style.cursor = "pointer";
+    thumb.style.border = "2px solid #f7c6da";
+    thumb.style.borderRadius = "6px";
+    thumb.addEventListener("click", () => {
+      activeImage = img;
+      modalImg.src = img;
+    });
+    thumbnails.appendChild(thumb);
   });
-});
 
-/* --- FERMETURE --- */
-function closeAll() {
+  modal.setAttribute("aria-hidden", "false");
+  document.body.style.overflow = "hidden";
+
+  updateLikeButton();
+}
+
+/* --- FERMETURE MODAL --- */
+function closeModal() {
   modal.setAttribute("aria-hidden", "true");
-  commentPanel.classList.remove("show");
   document.body.style.overflow = "";
+  commentPanel.setAttribute("aria-hidden", "true");
 }
 
-modalOverlay.addEventListener("click", closeAll);
-modalClose.addEventListener("click", closeAll);
+modalOverlay.addEventListener("click", closeModal);
+modalClose.addEventListener("click", closeModal);
 
-/* --- COMMENTAIRES --- */
+/* --- MODAL COMMENTAIRE --- */
 commentBtn.addEventListener("click", () => {
   renderComments();
-  commentPanel.classList.add("show");
+  commentPanel.setAttribute("aria-hidden", "false");
 });
 
-commentClose.addEventListener("click", () => {
-  commentPanel.classList.remove("show");
-});
+/* --- COMMENTAIRES --- */
+commentClose.addEventListener("click", () => commentPanel.setAttribute("aria-hidden", "true"));
 
-cancelBtn.addEventListener("click", () => {
-  commentPanel.classList.remove("show");
-});
-
-/* --- VALIDATION COMMENTAIRE --- */
-commentForm.addEventListener("submit", e => {
+commentForm.addEventListener("submit", async e => {
   e.preventDefault();
-  if (!activeImageKey) return;
+  if (!activeProject) return;
 
   const name = nameInput.value.trim() || "Anonyme";
   const text = textInput.value.trim();
   if (!text) return;
 
-  addCommentFor(activeImageKey, {
-    name,
-    text,
-    date: new Date().toISOString()
+  const projectRef = doc(db, "projects", activeProject.id);
+  await updateDoc(projectRef, {
+    comments: arrayUnion({ name, text, date: new Date().toISOString() })
   });
 
-  commentPanel.classList.remove("show");
-  closeAll();
+  textInput.value = "";
+  nameInput.value = "";
+  renderComments();
 });
+
+/* --- RENDU COMMENTAIRES --- */
+function renderComments() {
+  commentsList.innerHTML = "";
+  if (!activeProject.comments || activeProject.comments.length === 0) {
+    commentsList.innerHTML = `<div class="small-muted">Aucun commentaire</div>`;
+    return;
+  }
+  activeProject.comments.slice().reverse().forEach(c => {
+    const div = document.createElement("div");
+    div.className = "comment";
+    div.innerHTML = `<div class="who">${c.name} • ${new Date(c.date).toLocaleString()}</div><div class="txt">${c.text}</div>`;
+    commentsList.appendChild(div);
+  });
+}
+
+/* --- LIKES --- */
+likeBtn.addEventListener("click", async () => {
+  if (!activeProject) return;
+  const projectRef = doc(db, "projects", activeProject.id);
+  await updateDoc(projectRef, { likes: increment(1) });
+  activeProject.likes = (activeProject.likes || 0) + 1;
+  updateLikeButton();
+});
+
+function updateLikeButton() {
+  likeBtn.textContent = `❤️ ${activeProject.likes || 0}`;
+}
 
 /* --- EMOJIS --- */
 emojiRow.addEventListener("click", e => {
@@ -146,3 +145,6 @@ emojiRow.addEventListener("click", e => {
   textInput.value += " " + btn.textContent;
   textInput.focus();
 });
+
+/* --- INIT --- */
+loadProjects();

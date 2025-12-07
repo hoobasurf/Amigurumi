@@ -1,67 +1,67 @@
+// app-visitor.js
 import { db } from "./firebase.js";
-import { collection, getDocs } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+import { collection, getDocs, query, where, orderBy } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 
 const projectsContainer = document.getElementById("projects-container");
+const status = document.getElementById("status");
 
+// Fonction pour afficher les créations
+function displayCreations(creations) {
+  projectsContainer.innerHTML = "";
+  creations.forEach(doc => {
+    const data = doc.data();
+    
+    // Création d'une carte projet
+    const div = document.createElement("div");
+    div.style.border = "2px solid #f7c6da";
+    div.style.borderRadius = "8px";
+    div.style.padding = "5px";
+    div.style.margin = "5px";
+    div.style.width = "120px";
+    div.style.textAlign = "center";
+    
+    // Image principale
+    const img = document.createElement("img");
+    img.src = data.mainImage || data.imageUrls[0];
+    img.style.width = "100px";
+    img.style.height = "100px";
+    img.style.objectFit = "cover";
+    img.style.borderRadius = "5px";
+    div.appendChild(img);
+    
+    // Nom projet
+    const name = document.createElement("p");
+    name.textContent = data.name;
+    name.style.fontSize = "14px";
+    name.style.margin = "5px 0 0 0";
+    div.appendChild(name);
+    
+    projectsContainer.appendChild(div);
+  });
+}
+
+// Charger toutes les créations publiques
 async function loadCreations() {
+  status.innerHTML = "⏳ Chargement des créations publiques…";
   try {
-    const snapshot = await getDocs(collection(db, "creations"));
-    projectsContainer.innerHTML = ""; // vide avant affichage
-
-    snapshot.forEach(doc => {
-      const data = doc.data();
-      console.log("Doc Firestore:", doc.id, data);
-
-      // Bloc principal du projet
-      const projectDiv = document.createElement("div");
-      projectDiv.className = "project-item";
-      projectDiv.style.display = "inline-block";
-      projectDiv.style.margin = "10px";
-      projectDiv.style.cursor = "pointer";
-
-      // Image principale
-      const mainImg = document.createElement("img");
-      mainImg.src = data.mainImage || (data.imageUrls ? data.imageUrls[0] : "");
-      mainImg.style.width = "200px";
-      mainImg.style.height = "200px";
-      mainImg.style.objectFit = "cover";
-      mainImg.style.borderRadius = "10px";
-      projectDiv.appendChild(mainImg);
-
-      // Nom du projet
-      const title = document.createElement("p");
-      title.textContent = data.name || "Sans nom";
-      title.style.textAlign = "center";
-      projectDiv.appendChild(title);
-
-      // Miniatures supplémentaires
-      if (data.imageUrls && data.imageUrls.length > 1) {
-        const miniContainer = document.createElement("div");
-        miniContainer.style.display = "flex";
-        miniContainer.style.justifyContent = "center";
-        miniContainer.style.marginTop = "5px";
-
-        data.imageUrls.forEach((url, index) => {
-          if (index === 0) return; // la principale est déjà affichée
-          const mini = document.createElement("img");
-          mini.src = url;
-          mini.style.width = "50px";
-          mini.style.height = "50px";
-          mini.style.objectFit = "cover";
-          mini.style.border = "1px solid #ccc";
-          mini.style.borderRadius = "5px";
-          mini.style.margin = "2px";
-          miniContainer.appendChild(mini);
-        });
-        projectDiv.appendChild(miniContainer);
-      }
-
-      projectsContainer.appendChild(projectDiv);
-    });
+    const q = query(
+      collection(db, "creations"),
+      where("public", "==", true),
+      orderBy("createdAt", "desc")
+    );
+    const snapshot = await getDocs(q);
+    if (snapshot.empty) {
+      status.innerHTML = "Aucune création publique pour le moment.";
+      return;
+    }
+    const creations = snapshot.docs;
+    displayCreations(creations);
+    status.innerHTML = "✅ Créations chargées !";
   } catch (err) {
-    console.error("Erreur Firestore:", err);
-    projectsContainer.innerHTML = "<p>Erreur chargement projets.</p>";
+    status.innerHTML = `❌ Erreur chargement : ${err.message}`;
+    console.error("Firestore error:", err);
   }
 }
 
-loadCreations();
+// Exécuter au chargement
+document.addEventListener("DOMContentLoaded", loadCreations);

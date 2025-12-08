@@ -1,3 +1,4 @@
+alert("OWNER.JS CHARGE !");
 alert("JS OK");
 import { db, storage } from "./firebase.js";
 

@@ -1,8 +1,6 @@
-import { db, storage } from "./firebase.js";
-import { addDoc, collection, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
-import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-storage.js";
+// ⚡ On suppose que firebase.js est déjà chargé dans owner.html
+// et fournit db et storage
 
-// --- Tout le code dans DOMContentLoaded pour garantir que le DOM est chargé ---
 document.addEventListener("DOMContentLoaded", () => {
 
     const btn = document.getElementById("add");
@@ -10,7 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const photoInput = document.getElementById("photo");
     const ownerList = document.getElementById("owner-list");
 
-    if(!btn){
+    if (!btn) {
         alert("Bouton NON trouvé !");
         return;
     }
@@ -22,53 +20,65 @@ document.addEventListener("DOMContentLoaded", () => {
         const name = nameInput.value.trim();
         const file = photoInput.files[0];
 
-        if(!name || !file){
+        if (!name || !file) {
             alert("Merci de remplir le nom et choisir une image !");
             return;
         }
 
-        // Upload dans Firebase Storage
-        const storageRef = ref(storage, "photos/" + Date.now() + "-" + file.name);
-        await uploadBytes(storageRef, file);
-        const url = await getDownloadURL(storageRef);
+        try {
+            // Upload dans Firebase Storage
+            const storageRef = storage.ref("photos/" + Date.now() + "-" + file.name);
+            await storageRef.put(file);
+            const url = await storageRef.getDownloadURL();
 
-        // Ajout dans Firestore
-        await addDoc(collection(db, "creations"), {
-            name,
-            imageUrl: url,
-            createdAt: Date.now()
-        });
+            // Ajout dans Firestore
+            await db.collection("creations").add({
+                name,
+                imageUrl: url,
+                createdAt: Date.now()
+            });
 
-        // Reset inputs
-        nameInput.value = "";
-        photoInput.value = "";
+            // Reset inputs
+            nameInput.value = "";
+            photoInput.value = "";
 
-        loadCreations();
+            // Rafraîchir la liste
+            loadCreations();
+        } catch (err) {
+            console.error(err);
+            alert("Erreur lors de l'ajout de la création !");
+        }
     };
 
     // --- CHARGER LA LISTE ---
     async function loadCreations() {
-        const snap = await getDocs(collection(db, "creations"));
-        ownerList.innerHTML = "";
+        try {
+            const snap = await db.collection("creations").get();
+            ownerList.innerHTML = "";
 
-        snap.docs.forEach(docu => {
-            const div = document.createElement("div");
-            div.className = "owner-item";
+            snap.forEach(docu => {
+                const data = docu.data();
+                const div = document.createElement("div");
+                div.className = "owner-item";
 
-            div.innerHTML = `
-                <img src="${docu.data().imageUrl}" class="owner-thumb">
-                <span>${docu.data().name}</span>
-                <button class="delete-btn">🗑</button>
-            `;
+                div.innerHTML = `
+                    <img src="${data.imageUrl}" class="owner-thumb">
+                    <span>${data.name}</span>
+                    <button class="delete-btn">🗑</button>
+                `;
 
-            // Suppression
-            div.querySelector(".delete-btn").onclick = async () => {
-                await deleteDoc(doc(db, "creations", docu.id));
-                loadCreations();
-            };
+                // Suppression
+                div.querySelector(".delete-btn").onclick = async () => {
+                    await db.collection("creations").doc(docu.id).delete();
+                    loadCreations();
+                };
 
-            ownerList.appendChild(div);
-        });
+                ownerList.appendChild(div);
+            });
+        } catch (err) {
+            console.error(err);
+            alert("Erreur lors du chargement des créations !");
+        }
     }
 
     // Charge la liste au démarrage

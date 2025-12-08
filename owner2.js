@@ -3,21 +3,23 @@ import { db, storage } from "./firebase.js";
 import { addDoc, collection, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-storage.js";
 
-document.addEventListener("DOMContentLoaded", () => {
-
+// --- ATTENDRE QUE LE BOUTON EXISTE ---
+function waitForButton(callback) {
     const btn = document.getElementById("add");
+    if(btn){
+        callback(btn);
+    } else {
+        setTimeout(() => waitForButton(callback), 50);
+    }
+}
+
+waitForButton((btn) => {
     const nameInput = document.getElementById("name");
     const photoInput = document.getElementById("photo");
     const ownerList = document.getElementById("owner-list");
 
-    if (!btn) {
-        alert("Bouton NON trouvé !");
-        return;
-    }
-
     console.log("Bouton trouvé ! Firebase chargé ?", db ? "OUI" : "NON");
 
-    // --- AJOUTER UNE CRÉATION ---
     btn.onclick = async () => {
         const name = nameInput.value.trim();
         const file = photoInput.files[0];
@@ -28,19 +30,16 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         try {
-            // Upload image dans Firebase Storage
             const storageRef = ref(storage, "photos/" + Date.now() + "-" + file.name);
             await uploadBytes(storageRef, file);
             const url = await getDownloadURL(storageRef);
 
-            // Ajouter dans Firestore
             await addDoc(collection(db, "creations"), {
                 name,
                 imageUrl: url,
                 createdAt: Date.now()
             });
 
-            // Reset inputs
             nameInput.value = "";
             photoInput.value = "";
 
@@ -52,7 +51,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
-    // --- CHARGER LA LISTE ---
     async function loadCreations() {
         try {
             const snap = await getDocs(collection(db, "creations"));
@@ -82,7 +80,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // Charge la liste au démarrage
+    // Charge la liste dès le départ
     loadCreations();
-
 });

@@ -1,3 +1,8 @@
+// --- IMPORTS ---
+import { db, storage } from "./firebase.js";
+import { addDoc, collection, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-storage.js";
+
 document.addEventListener("DOMContentLoaded", () => {
 
     const btn = document.getElementById("add");
@@ -10,6 +15,8 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
     }
 
+    console.log("Bouton trouvé ! Firebase chargé ?", db ? "OUI" : "NON");
+
     // --- AJOUTER UNE CRÉATION ---
     btn.onclick = async () => {
         const name = nameInput.value.trim();
@@ -21,13 +28,13 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         try {
-            // Upload image
-            const storageRef = storage.ref("photos/" + Date.now() + "-" + file.name);
-            await storageRef.put(file);
-            const url = await storageRef.getDownloadURL();
+            // Upload image dans Firebase Storage
+            const storageRef = ref(storage, "photos/" + Date.now() + "-" + file.name);
+            await uploadBytes(storageRef, file);
+            const url = await getDownloadURL(storageRef);
 
             // Ajouter dans Firestore
-            await db.collection("creations").add({
+            await addDoc(collection(db, "creations"), {
                 name,
                 imageUrl: url,
                 createdAt: Date.now()
@@ -48,10 +55,10 @@ document.addEventListener("DOMContentLoaded", () => {
     // --- CHARGER LA LISTE ---
     async function loadCreations() {
         try {
-            const snap = await db.collection("creations").get();
+            const snap = await getDocs(collection(db, "creations"));
             ownerList.innerHTML = "";
 
-            snap.forEach(docu => {
+            snap.docs.forEach(docu => {
                 const data = docu.data();
                 const div = document.createElement("div");
                 div.className = "owner-item";
@@ -63,7 +70,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 `;
 
                 div.querySelector(".delete-btn").onclick = async () => {
-                    await db.collection("creations").doc(docu.id).delete();
+                    await deleteDoc(doc(db, "creations", docu.id));
                     loadCreations();
                 };
 
@@ -75,7 +82,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // Charger la liste au démarrage
+    // Charge la liste au démarrage
     loadCreations();
 
 });

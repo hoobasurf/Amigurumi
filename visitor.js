@@ -1,3 +1,4 @@
+alert("VERSION TEST 999");
 import { db } from "./firebase.js";
 import {
   collection, getDocs, addDoc, doc

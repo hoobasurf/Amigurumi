@@ -1,62 +1,58 @@
-// --- IMPORTS ---
-import { db, storage } from "./firebase.js";
-import { addDoc, collection, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
-import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-storage.js";
-
-// --- ATTENDRE QUE LE BOUTON EXISTE ---
-function waitForButton(callback) {
+window.addEventListener("load", () => {
     const btn = document.getElementById("add");
-    if(btn){
-        callback(btn);
-    } else {
-        setTimeout(() => waitForButton(callback), 50);
-    }
-}
-
-waitForButton((btn) => {
     const nameInput = document.getElementById("name");
     const photoInput = document.getElementById("photo");
     const ownerList = document.getElementById("owner-list");
 
+    if(!btn){
+        alert("Bouton NON trouvé !");
+        return;
+    }
+
     console.log("Bouton trouvé ! Firebase chargé ?", db ? "OUI" : "NON");
 
+    // --- AJOUTER UNE CRÉATION ---
     btn.onclick = async () => {
         const name = nameInput.value.trim();
         const file = photoInput.files[0];
 
-        if (!name || !file) {
+        if(!name || !file){
             alert("Merci de remplir le nom et choisir une image !");
             return;
         }
 
         try {
-            const storageRef = ref(storage, "photos/" + Date.now() + "-" + file.name);
-            await uploadBytes(storageRef, file);
-            const url = await getDownloadURL(storageRef);
+            // Upload image
+            const storageRef = storage.ref("photos/" + Date.now() + "-" + file.name);
+            await storageRef.put(file);
+            const url = await storageRef.getDownloadURL();
 
-            await addDoc(collection(db, "creations"), {
-                name,
+            // Ajouter dans Firestore
+            await db.collection("creations").add({
+                name: name,
                 imageUrl: url,
                 createdAt: Date.now()
             });
 
+            // Reset inputs
             nameInput.value = "";
             photoInput.value = "";
 
             loadCreations();
 
-        } catch (err) {
+        } catch(err) {
             console.error(err);
             alert("Erreur lors de l'ajout de la création !");
         }
     };
 
-    async function loadCreations() {
+    // --- CHARGER LA LISTE ---
+    async function loadCreations(){
         try {
-            const snap = await getDocs(collection(db, "creations"));
+            const snap = await db.collection("creations").get();
             ownerList.innerHTML = "";
 
-            snap.docs.forEach(docu => {
+            snap.forEach(docu => {
                 const data = docu.data();
                 const div = document.createElement("div");
                 div.className = "owner-item";
@@ -68,18 +64,19 @@ waitForButton((btn) => {
                 `;
 
                 div.querySelector(".delete-btn").onclick = async () => {
-                    await deleteDoc(doc(db, "creations", docu.id));
+                    await db.collection("creations").doc(docu.id).delete();
                     loadCreations();
                 };
 
                 ownerList.appendChild(div);
             });
-        } catch (err) {
+
+        } catch(err) {
             console.error(err);
             alert("Erreur lors du chargement des créations !");
         }
     }
 
-    // Charge la liste dès le départ
+    // Charge la liste au démarrage
     loadCreations();
 });

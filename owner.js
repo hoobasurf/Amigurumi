@@ -1,4 +1,5 @@
 import { db, storage } from "./firebase.js";
+
 import {
   addDoc, collection, getDocs, deleteDoc, doc
 } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
@@ -7,29 +8,41 @@ import {
   ref, uploadBytes, getDownloadURL
 } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-storage.js";
 
+// Ajouter une création
 document.getElementById("add").onclick = async () => {
-  const name = document.getElementById("name").value;
+  const name = document.getElementById("name").value.trim();
   const file = document.getElementById("photo").files[0];
 
-  if (!name || !file) return;
+  if (!name || !file) {
+    alert("Remplis le nom et choisis une image 🧸");
+    return;
+  }
 
-  const storageRef = ref(storage, "photos/" + file.name);
+  // Upload
+  const storageRef = ref(storage, "photos/" + Date.now() + "-" + file.name);
   await uploadBytes(storageRef, file);
 
   const url = await getDownloadURL(storageRef);
 
+  // Enregistrer Firestore
   await addDoc(collection(db, "creations"), {
     name,
     imageUrl: url,
     createdAt: Date.now()
   });
 
+  // Reset champs
+  document.getElementById("name").value = "";
+  document.getElementById("photo").value = "";
+
   loadCreations();
 };
 
+// Charger la liste
 async function loadCreations() {
   const snap = await getDocs(collection(db, "creations"));
   const list = document.getElementById("owner-list");
+
   list.innerHTML = "";
 
   snap.docs.forEach(docu => {
@@ -42,8 +55,9 @@ async function loadCreations() {
       <button class="delete-btn">🗑</button>
     `;
 
-    div.querySelector(".delete-btn").onclick = () => {
-      deleteDoc(doc(db, "creations", docu.id));
+    // Suppression
+    div.querySelector(".delete-btn").onclick = async () => {
+      await deleteDoc(doc(db, "creations", docu.id));
       loadCreations();
     };
 

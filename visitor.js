@@ -62,3 +62,5 @@ document.getElementById("send-comment").onclick = async () => {
 };
 
 loadCreations();
+
+console.log("Test bouton : ", document.getElementById("ajouteBtn"));

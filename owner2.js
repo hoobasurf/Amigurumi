@@ -72,3 +72,19 @@ async function loadCreations() {
 }
 
 loadCreations();
+
+document.addEventListener("DOMContentLoaded", () => {
+    // Vérifie que Firebase est chargé
+    alert("Firebase chargé côté owner !");
+    
+    const btn = document.getElementById("ajouteBtn");
+    if(btn){
+        alert("Bouton trouvé !");
+        btn.addEventListener("click", () => {
+            alert("Bouton cliqué !");
+            // Ici tu mets le code pour ajouter la création dans Firebase
+        });
+    } else {
+        alert("Bouton NON trouvé !");
+    }
+});

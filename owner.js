@@ -1,3 +1,4 @@
+alert("JS OK");
 import { db, storage } from "./firebase.js";
 
 import {

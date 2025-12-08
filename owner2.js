@@ -1,6 +1,3 @@
-// ⚡ On suppose que firebase.js est déjà chargé dans owner.html
-// et fournit db et storage
-
 document.addEventListener("DOMContentLoaded", () => {
 
     const btn = document.getElementById("add");
@@ -13,8 +10,6 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
     }
 
-    console.log("Bouton trouvé ! Firebase chargé ?", db ? "OUI" : "NON");
-
     // --- AJOUTER UNE CRÉATION ---
     btn.onclick = async () => {
         const name = nameInput.value.trim();
@@ -26,12 +21,12 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         try {
-            // Upload dans Firebase Storage
+            // Upload image
             const storageRef = storage.ref("photos/" + Date.now() + "-" + file.name);
             await storageRef.put(file);
             const url = await storageRef.getDownloadURL();
 
-            // Ajout dans Firestore
+            // Ajouter dans Firestore
             await db.collection("creations").add({
                 name,
                 imageUrl: url,
@@ -42,8 +37,8 @@ document.addEventListener("DOMContentLoaded", () => {
             nameInput.value = "";
             photoInput.value = "";
 
-            // Rafraîchir la liste
             loadCreations();
+
         } catch (err) {
             console.error(err);
             alert("Erreur lors de l'ajout de la création !");
@@ -67,7 +62,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     <button class="delete-btn">🗑</button>
                 `;
 
-                // Suppression
                 div.querySelector(".delete-btn").onclick = async () => {
                     await db.collection("creations").doc(docu.id).delete();
                     loadCreations();
@@ -81,7 +75,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // Charge la liste au démarrage
+    // Charger la liste au démarrage
     loadCreations();
 
 });

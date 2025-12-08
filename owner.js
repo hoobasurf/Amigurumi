@@ -1,6 +1,11 @@
 alert("JS OK");
 import { db, storage } from "./firebase.js";
 
+console.log("DB =", db);
+console.log("STORAGE =", storage);
+alert("Firebase chargé ? " + (db ? "OUI" : "NON"));
+import { db, storage } from "./firebase.js";
+
 import {
   addDoc, collection, getDocs, deleteDoc, doc
 } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";

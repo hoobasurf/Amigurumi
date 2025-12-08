@@ -1,10 +1,7 @@
-alert("OWNER.JS CHARGE !");
+alert("OWNER.JS GITHUB OK !");
 alert("JS OK");
-import { db, storage } from "./firebase.js";
 
-console.log("DB =", db);
-console.log("STORAGE =", storage);
-alert("Firebase chargé ? " + (db ? "OUI" : "NON"));
+// --- IMPORTS ---
 import { db, storage } from "./firebase.js";
 
 import {
@@ -15,7 +12,10 @@ import {
   ref, uploadBytes, getDownloadURL
 } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-storage.js";
 
-// Ajouter une création
+// Vérification Firebase
+alert("Firebase chargé ? " + (db ? "OUI" : "NON"));
+
+// --- AJOUTER UNE CRÉATION ---
 document.getElementById("add").onclick = async () => {
   const name = document.getElementById("name").value.trim();
   const file = document.getElementById("photo").files[0];
@@ -28,10 +28,9 @@ document.getElementById("add").onclick = async () => {
   // Upload
   const storageRef = ref(storage, "photos/" + Date.now() + "-" + file.name);
   await uploadBytes(storageRef, file);
-
   const url = await getDownloadURL(storageRef);
 
-  // Enregistrer Firestore
+  // Firestore
   await addDoc(collection(db, "creations"), {
     name,
     imageUrl: url,
@@ -45,7 +44,7 @@ document.getElementById("add").onclick = async () => {
   loadCreations();
 };
 
-// Charger la liste
+// --- CHARGER LA LISTE ---
 async function loadCreations() {
   const snap = await getDocs(collection(db, "creations"));
   const list = document.getElementById("owner-list");
